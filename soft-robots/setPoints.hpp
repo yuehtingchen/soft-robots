@@ -9,8 +9,12 @@
 #define setPoints_hpp
 
 void initializePoints();
+void initializePointsTetrahedral();
 void initializeSprings();
 void updatePoints();
+void writeEnergy();
 void printPoints();
+float calcPotentialEnergy();
+float calcKineticEnergy();
 
 #endif /* draw_hpp */

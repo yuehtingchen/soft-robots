@@ -8,7 +8,7 @@
 #ifndef utility_h
 #define utility_h
 
-#define MAXN 100
+#define MAXN 200
 
 struct Point
 {

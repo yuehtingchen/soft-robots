@@ -30,6 +30,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		F21AA3B3291042C800DF7ED4 /* FloorFragmentShader.fragmentshader.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = FloorFragmentShader.fragmentshader.glsl; sourceTree = "<group>"; };
+		F21AA3B4291042D200DF7ED4 /* FloorVertexShader.vertexshader.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = FloorVertexShader.vertexshader.glsl; sourceTree = "<group>"; };
 		F2BFADA5290D95870056388D /* setPoints.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = setPoints.cpp; sourceTree = "<group>"; };
 		F2BFADA6290D95870056388D /* setPoints.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = setPoints.hpp; sourceTree = "<group>"; };
 		F2BFADA9290DA2510056388D /* utility.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = utility.h; sourceTree = "<group>"; };
@@ -122,6 +124,8 @@
 		F2E9C80B29047DB8002263B6 /* shaders */ = {
 			isa = PBXGroup;
 			children = (
+				F21AA3B4291042D200DF7ED4 /* FloorVertexShader.vertexshader.glsl */,
+				F21AA3B3291042C800DF7ED4 /* FloorFragmentShader.fragmentshader.glsl */,
 				F2E9C80C29047E25002263B6 /* SimpleFragmentShader.fragmentshader.glsl */,
 				F2E9C80D29047E51002263B6 /* SimpleVertexShader.vertexshader.glsl */,
 			);
