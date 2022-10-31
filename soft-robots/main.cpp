@@ -54,17 +54,6 @@ extern int numPoints;
 extern struct Point points[MAXN];
 extern struct Spring springs[MAXN];
 const bool draw_surface = true;
-
-int ground_buffer_len = 6;
-vec3 ground_vertex_data[6] = {
-    vec3(-2, -2, 0),
-    vec3(2, -2, 0),
-    vec3(-2, 2, 0),
-    vec3(2, 2, 0),
-    vec3(-2, 2, 0),
-    vec3(2, -2, 0),
-};
-
 int line_buffer_len = numPoints * (numPoints - 1);
 int normal_buffer_len = 0;
 int vertex_buffer_len = 0;
@@ -73,14 +62,26 @@ vec3 box_vertex_buffer_data[MAXN];
 vec3 box_line_buffer_data[MAXN];
 vec3 normal[MAXN];
 
+/* floor */
+int floor_buffer_len = 6;
+vec3 floor_vertex_data[6] = {
+    vec3(-2, -2, 0),
+    vec3(2, -2, 0),
+    vec3(-2, 2, 0),
+    vec3(2, 2, 0),
+    vec3(-2, 2, 0),
+    vec3(2, -2, 0),
+};
+
 int draw( void );
+int initializeWindow();
 void updateObject();
+void drawFloor(GLuint floorProgramID, GLuint groundbuffer, mat4 MVP);
 void testObject();
 
 int main()
 {
     initializePoints();
-//    initializePointsTetrahedral();
     initializeSprings();
     updateObject();
     
@@ -99,50 +100,12 @@ int main()
 
 int draw( void )
 {
-    /* Initialise GLFW */
-    if( !glfwInit() )
+    
+    if(initializeWindow() != 0)
     {
-        fprintf( stderr, "Failed to initialize GLFW\n" );
-        getchar();
-        return -1;
-    }
-
-    glfwWindowHint(GLFW_SAMPLES, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    /* Open a window and create its OpenGL context */
-    window = glfwCreateWindow( windowWidth, windowHeight, windowTitle, NULL, NULL);
-    if( window == NULL ){
-        fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
-        getchar();
-        glfwTerminate();
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
-    
-    /* Initialize GLEW */
-    glewExperimental = true; // Needed for core profile
-    if (glewInit() != GLEW_OK) {
-        fprintf(stderr, "Failed to initialize GLEW\n");
-        getchar();
-        glfwTerminate();
         return -1;
     }
     
-    /* Ensure we can capture the escape key being pressed below */
-    glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
-    /* Enable unlimited movement on mouse */
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    /* set mouse at center */
-    glfwPollEvents();
-    glfwSetCursorPos(window, windowWidth/2, windowHeight/2);
-
-    /* White background */
-    glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
-
     GLuint VertexArrayID;
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
@@ -175,11 +138,10 @@ int draw( void )
     int fragment_color_location = glGetUniformLocation(programID, "fragmentColor");
     int light_position_location = glGetUniformLocation(programID, "lightPosition_worldspace");
     
-    /* ground color */
     GLuint groundbuffer;
     glGenBuffers(1, &groundbuffer);
     glBindBuffer(GL_ARRAY_BUFFER, groundbuffer);
-    glBufferData(GL_ARRAY_BUFFER, ground_buffer_len * sizeof(vec3), &ground_vertex_data[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, floor_buffer_len * sizeof(vec3), &floor_vertex_data[0], GL_STATIC_DRAW);
 
     do{
         while(drawCount ++ < drawEvery)
@@ -201,22 +163,9 @@ int draw( void )
 //        mat4 ModelMatrix = mat4(1.0);
 //        mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
         
-        /* use floor shader */
-        glUseProgram(floorProgramID);
+        /* draw floor */
+        drawFloor(floorProgramID, groundbuffer, MVP);
         
-        glUniformMatrix4fv(FloorMatrixID, 1, GL_FALSE, &MVP[0][0]);
-        /* 0th attribute buffer : ground vertices
-         * Parameters: attribute, size, type, normalized?, stride, array buffer offset
-         */
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, groundbuffer);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *) 0);
-        
-        /* draw triangles for ground */
-        glDrawArrays(GL_TRIANGLES, 0, (unsigned int) ground_buffer_len);
-        glDisableVertexAttribArray(0);
-        
-
         /* Use our shader */
         glUseProgram(programID);
 
@@ -300,6 +249,77 @@ int draw( void )
     /* Close OpenGL window and terminate GLFW */
     glfwTerminate();
 
+    return 0;
+}
+
+void drawFloor(GLuint floorProgramID, GLuint groundbuffer, mat4 MVP)
+{
+    GLuint FloorMatrixID = glGetUniformLocation(floorProgramID, "MVP");
+    
+    /* use floor shader */
+    glUseProgram(floorProgramID);
+    
+    glUniformMatrix4fv(FloorMatrixID, 1, GL_FALSE, &MVP[0][0]);
+    
+    /* 0th attribute buffer : ground vertices
+     * Parameters: attribute, size, type, normalized?, stride, array buffer offset
+     */
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, groundbuffer);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *) 0);
+    
+    /* draw triangles for ground */
+    glDrawArrays(GL_TRIANGLES, 0, (unsigned int) floor_buffer_len);
+    glDisableVertexAttribArray(0);
+}
+
+
+int initializeWindow()
+{
+    /* Initialise GLFW */
+    if( !glfwInit() )
+    {
+        fprintf( stderr, "Failed to initialize GLFW\n" );
+        getchar();
+        return -1;
+    }
+
+    glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    /* Open a window and create its OpenGL context */
+    window = glfwCreateWindow( windowWidth, windowHeight, windowTitle, NULL, NULL);
+    if( window == NULL ){
+        fprintf( stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n" );
+        getchar();
+        glfwTerminate();
+        return -1;
+    }
+    glfwMakeContextCurrent(window);
+    
+    /* Initialize GLEW */
+    glewExperimental = true; // Needed for core profile
+    if (glewInit() != GLEW_OK) {
+        fprintf(stderr, "Failed to initialize GLEW\n");
+        getchar();
+        glfwTerminate();
+        return -1;
+    }
+    
+    /* Ensure we can capture the escape key being pressed below */
+    glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+    /* Enable unlimited movement on mouse */
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    /* set mouse at center */
+    glfwPollEvents();
+    glfwSetCursorPos(window, windowWidth/2, windowHeight/2);
+
+    /* White background */
+    glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+    
     return 0;
 }
 
