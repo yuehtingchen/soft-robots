@@ -11,6 +11,8 @@
 #include <iostream>
 #include <unistd.h>
 #include <vector>
+#include <chrono>
+#include <time.h>
 using namespace std;
 
 // Include GLEW
@@ -53,24 +55,22 @@ int drawCount = 0;
 extern int numPoints;
 extern struct Point points[MAXN];
 extern struct Spring springs[MAXN];
-const bool draw_surface = true;
-int line_buffer_len = numPoints * (numPoints - 1);
-int normal_buffer_len = 0;
-int vertex_buffer_len = 0;
-vec3 box_points_buffer_data[MAXN];
-vec3 box_vertex_buffer_data[MAXN];
-vec3 box_line_buffer_data[MAXN];
-vec3 normal[MAXN];
+const bool draw_surface = false;
+
+vector< vec3 > box_points_buffer_data;
+vector< vec3 > box_vertex_buffer_data;
+vector< vec3 > box_line_buffer_data;
+vector< vec3 > normal;
 
 /* floor */
 int floor_buffer_len = 6;
 vec3 floor_vertex_data[6] = {
-    vec3(-2, -2, 0),
-    vec3(2, -2, 0),
-    vec3(-2, 2, 0),
-    vec3(2, 2, 0),
-    vec3(-2, 2, 0),
-    vec3(2, -2, 0),
+    vec3(-100, -100, 0),
+    vec3(100, -100, 0),
+    vec3(-100, 100, 0),
+    vec3(100, 100, 0),
+    vec3(-100, 100, 0),
+    vec3(100, -100, 0),
 };
 
 int draw( void );
@@ -81,11 +81,21 @@ void testObject();
 
 int main()
 {
-    initializePoints();
+    initializePointsCube();
     initializeSprings();
     updateObject();
     
 //    printPoints();
+//    auto start = chrono::high_resolution_clock::now();
+//    for(int i = 0; i < 1000; i ++)
+//    {
+//        updatePoints();
+//    }
+//    auto stop = chrono::high_resolution_clock::now();
+//        auto duration = duration_cast<chrono::microseconds>(stop - start);
+//        cout << "Time taken by function: "
+//             << duration.count() << " microseconds" << endl;
+    
 //    while(T < MAX_TIME)
 //    {
 //        updatePoints();
@@ -119,7 +129,6 @@ int draw( void )
     GLuint MatrixID = glGetUniformLocation(programID, "MVP");
     GLuint ModelMatrixID = glGetUniformLocation(programID, "Model");
     GLuint ViewMatrixID = glGetUniformLocation(programID, "View");
-    GLuint FloorMatrixID = glGetUniformLocation(floorProgramID, "MVP");
     
     /* set constant MVP matrix */
     vec3 cameraPosition = vec3(-1, 7, 6);
@@ -179,18 +188,18 @@ int draw( void )
         {
             glGenBuffers(1, &vertexbuffer);
             glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-            glBufferData(GL_ARRAY_BUFFER, line_buffer_len* sizeof(vec3), &box_line_buffer_data[0], GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, box_line_buffer_data.size() * sizeof(vec3), &box_line_buffer_data[0], GL_STATIC_DRAW);
         }
         /* draw surface */
         else
         {
             glGenBuffers(1, &vertexbuffer);
             glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-            glBufferData(GL_ARRAY_BUFFER, vertex_buffer_len * sizeof(vec3), &box_vertex_buffer_data[0], GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, box_vertex_buffer_data.size() * sizeof(vec3), &box_vertex_buffer_data[0], GL_STATIC_DRAW);
 
             glGenBuffers(1, &normalVertexbuffer);
             glBindBuffer(GL_ARRAY_BUFFER, normalVertexbuffer);
-            glBufferData(GL_ARRAY_BUFFER, normal_buffer_len * sizeof(vec3), &normal[0], GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, normal.size() * sizeof(vec3), &normal[0], GL_STATIC_DRAW);
         }
         
         /* 1rst attribute buffer : vertices
@@ -212,15 +221,13 @@ int draw( void )
         /* draw lines */
         if (!draw_surface)
         {
-            glDrawArrays(GL_LINES, 0, (unsigned int) line_buffer_len);
+            glDrawArrays(GL_LINES, 0, (unsigned int) box_line_buffer_data.size());
         }
         /* draw triangles */
         else
         {
-            glDrawArrays(GL_TRIANGLES, 0, (unsigned int) vertex_buffer_len);
+            glDrawArrays(GL_TRIANGLES, 0, (unsigned int) box_vertex_buffer_data.size());
         }
-        
-        
         
         /* color of box */
         glUniform3f(fragment_color_location, color_data[0], color_data[1], color_data[2]);
@@ -325,12 +332,13 @@ int initializeWindow()
 
 void updateObject()
 {
-    vertex_buffer_len = 0;
-    normal_buffer_len = 0;
+    box_points_buffer_data.clear();
+    box_vertex_buffer_data.clear();
+    box_line_buffer_data.clear();
     
     for(int i = 0; i < numPoints; i ++)
     {
-        box_points_buffer_data[i] = vec3(points[i].pos[0], points[i].pos[1], points[i].pos[2]);
+        box_points_buffer_data.push_back(vec3(points[i].pos[0], points[i].pos[1], points[i].pos[2]));
     }
     
     for(int i = 0; i < numPoints - 2; i ++)
@@ -340,34 +348,33 @@ void updateObject()
             for(int k = j + 1; k < numPoints; k ++)
             {
                 /* don't know which is the correct direction so do both */
-                box_vertex_buffer_data[vertex_buffer_len++] = (box_points_buffer_data[i]);
-                box_vertex_buffer_data[vertex_buffer_len++] = (box_points_buffer_data[j]);
-                box_vertex_buffer_data[vertex_buffer_len++] = (box_points_buffer_data[k]);
+                box_vertex_buffer_data.push_back(box_points_buffer_data[i]);
+                box_vertex_buffer_data.push_back(box_points_buffer_data[j]);
+                box_vertex_buffer_data.push_back(box_points_buffer_data[k]);
                 
-                box_vertex_buffer_data[vertex_buffer_len++] = (box_points_buffer_data[k]);
-                box_vertex_buffer_data[vertex_buffer_len++] = (box_points_buffer_data[j]);
-                box_vertex_buffer_data[vertex_buffer_len++] = (box_points_buffer_data[i]);
+                box_vertex_buffer_data.push_back(box_points_buffer_data[k]);
+                box_vertex_buffer_data.push_back(box_points_buffer_data[j]);
+                box_vertex_buffer_data.push_back(box_points_buffer_data[i]);
             }
         }
     }
 
-    for(int i = 0; i < vertex_buffer_len; i += 3)
+    for(int i = 0; i < box_vertex_buffer_data.size(); i += 3)
     {
         vec3 v1 = box_vertex_buffer_data[i];
         vec3 v2 = box_vertex_buffer_data[i + 1];
         vec3 v3 = box_vertex_buffer_data[i + 2];
         vec3 edge1 = v2 - v1;
         vec3 edge2 = v3 - v1;
-        normal[normal_buffer_len ++] = (normalize(cross(edge1, edge2)));
+        normal.push_back((normalize(cross(edge1, edge2))));
     }
-    
-    int line_len = 0;
+
     for(int i = 0; i < numPoints - 1; i ++)
     {
         for(int j = i + 1; j < numPoints; j ++)
         {
-            box_line_buffer_data[line_len ++] = (box_points_buffer_data[i]);
-            box_line_buffer_data[line_len ++] = (box_points_buffer_data[j]);
+            box_line_buffer_data.push_back(box_points_buffer_data[i]);
+            box_line_buffer_data.push_back(box_points_buffer_data[j]);
         }
     }
     

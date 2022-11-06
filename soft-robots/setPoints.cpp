@@ -46,7 +46,8 @@ float calcDist(float p1[3], float p2[3]);
 void calcVector(float vec[3], float p1[3], float p2[3]);
 void normalizeVector(float vec[3]);
 void reverseVector(float vec[3]);
-void initializePoints();
+void intializeWalkingCubes();
+void initializePointsCube();
 void initializePointsTetrahedral();
 void initializeSprings();
 float calcPotentialEnergy();
@@ -234,7 +235,77 @@ void reverseVector(float vec[3])
     return;
 }
 
-void initializePoints()
+int initializeFeet(struct Point* points_start)
+{
+    float x[4] = {0, 1, 3, 4};
+    float y[5] = {0, 1, 2, 3, 5};
+    int p = 0;
+    
+    for(int i = 0; i < 4; i ++)
+    {
+        for(int j = 0; j < 5; j ++)
+        {
+            points_start[p].mass = 0.1;
+            for(int k = 0; k < 3; k ++)
+            {
+                points_start[p].velocity[k] = 0;
+                points_start[p].accel[k] = 0;
+                points_start[p].force[k] = 0;
+            }
+            
+            p ++;
+        }
+    }
+    
+    return p;
+}
+
+int initializeBody(struct Point* points_start)
+{
+    float x[5] = {0, 1, 2, 3, 4};
+    float y[5] = {0, 1, 2, 3, 5};
+    int p = 0;
+    
+    for(int i = 0; i < 5; i ++)
+    {
+        for(int j = 0; j < 5; j ++)
+        {
+            points_start[p].mass = 0.1;
+            for(int k = 0; k < 3; k ++)
+            {
+                points_start[p].velocity[k] = 0;
+                points_start[p].accel[k] = 0;
+                points_start[p].force[k] = 0;
+            }
+            
+            p ++;
+        }
+    }
+    
+    return p;
+}
+
+void intializeWalkingCubes()
+{
+    numPoints = 115;
+    int p = 0;
+    
+    for(int z = 0; z <= 5; z ++)
+    {
+        if(z == 0 || z == 1)
+        {
+            p += initializeFeet(&points[p]);
+        }
+        else
+        {
+            p += initializeBody(&points[p]);
+        }
+    }
+    
+    return;
+}
+
+void initializePointsCube()
 {
     for(int i = 0; i < numPoints; i ++)
     {

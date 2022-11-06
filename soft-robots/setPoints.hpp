@@ -8,7 +8,8 @@
 #ifndef setPoints_hpp
 #define setPoints_hpp
 
-void initializePoints();
+void intializeWalkingCubes();
+void initializePointsCube();
 void initializePointsTetrahedral();
 void initializeSprings();
 void updatePoints();

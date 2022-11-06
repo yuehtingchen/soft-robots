@@ -12,6 +12,7 @@
 #include <fstream>
 #include <algorithm>
 #include <sstream>
+#include <math.h>
 using namespace std;
 
 #include <stdlib.h>
