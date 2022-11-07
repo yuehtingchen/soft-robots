@@ -4,10 +4,11 @@ in vec3 vertexPosition_worldspace;
 in vec3 vertexNormal_cameraspace;
 in vec3 eyeDirection_cameraspace;
 in vec3 lightDirection_cameraspace;
+in vec3 fragmentColor;
 
 out vec3 color;
 
-uniform vec3 fragmentColor;
+uniform vec3 uniformColor;
 
 uniform mat4 Model;
 uniform mat4 View;

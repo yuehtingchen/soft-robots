@@ -15,54 +15,55 @@
 using namespace std;
 
 #include "setPoints.hpp"
+#include "createObject.hpp"
 #include "utility.h"
 
 extern const float TIME_STEP;
+extern float T;
+
 const float GRAVITY[3] = {0, 0, -9.81};
 const int kc = 10000; // restoration force
 const bool damping = false;
 const float DAMPING_CONST = 0.99999;
-const bool breathing = false;
-const float OMEGA = 3.1415926;
-const float b = 0.05;
+const float mu = 1.0; // friction
+const float muk = 0.8; // friction
 
-float T = 0;
-int numPoints = 8;
-int numSprings = numPoints * (numPoints - 1) / 2;
-struct Point points[MAXN];
-struct Spring springs[MAXN];
+extern int numPoints;
+extern int numSprings;
+extern struct Point points[MAXN];
+extern struct Spring springs[MAXN];
+
 float energy[1000000][2];
 int energy_len = 0;
 
 void writeEnergy();
+void printSprings();
 void printPoints();
 void calcForce();
 void updatePointsPos();
 void resetPointForce();
 void calcSpringForce();
 void calcGravitationalForce();
+void calcFriction();
 void calcRestorationForce();
-float calcDist(float p1[3], float p2[3]);
 void calcVector(float vec[3], float p1[3], float p2[3]);
 void normalizeVector(float vec[3]);
 void reverseVector(float vec[3]);
-void intializeWalkingCubes();
-void initializePointsCube();
-void initializePointsTetrahedral();
-void initializeSprings();
 float calcPotentialEnergy();
 float calcKineticEnergy();
+
 
 void updatePoints()
 {
     calcForce();
 
-//    float ke = calcKineticEnergy();
-//    float pe = calcPotentialEnergy();
-//    energy[energy_len][0] = ke;
-//    energy[energy_len ++][1] = pe;
+    float ke = calcKineticEnergy();
+    float pe = calcPotentialEnergy();
+    energy[energy_len][0] = ke;
+    energy[energy_len ++][1] = pe;
 
     updatePointsPos();
+    
     T += TIME_STEP;
     
     return;
@@ -70,7 +71,7 @@ void updatePoints()
 
 void writeEnergy()
 {
-    char filename[100] = "/Users/CJChen/Desktop/CourseworksF2022/energy/energy_spin.csv";
+    char filename[100] = "/Users/CJChen/Desktop/CourseworksF2022/energy/energy_friction.csv";
     FILE* file = fopen(filename, "w+");
     if(file == NULL)
     {
@@ -98,11 +99,28 @@ void printPoints()
     printf("--------------------\n");
 }
 
+void printSprings()
+{
+    for(int i = 0; i < numSprings; i ++)
+    {
+        printf("p1: %f %f %f\n", springs[i].p1->pos[0], springs[i].p1->pos[1], springs[i].p1->pos[2]);
+        printf("p2: %f %f %f\n", springs[i].p2->pos[0], springs[i].p2->pos[1], springs[i].p2->pos[2]);
+        printf("k=%f ", springs[i].k);
+        if(springs[i].muscle)
+        {
+            printf("omega=%f b=%f c=%f", springs[i].omega, springs[i].b, springs[i].c);
+        }
+        printf("\n");
+    }
+    printf("--------------------\n");
+}
+
 void calcForce()
 {
     resetPointForce();
     calcSpringForce();
     calcGravitationalForce();
+    calcFriction();
     calcRestorationForce();
     
     return;
@@ -146,9 +164,9 @@ void calcSpringForce()
         float k = springs[i].k;
         float len = springs[i].len;
         
-        if(breathing)
+        if(springs[i].muscle)
         {
-            len = len + b * sin(OMEGA * T - TIME_STEP);
+            len = len + springs[i].b * sin(springs[i].omega * T + springs[i].c);
         }
         
         float dist = calcDist(p1->pos, p2->pos);
@@ -184,6 +202,36 @@ void calcGravitationalForce()
     return;
 }
 
+void calcFriction()
+{
+    for(int i = 0; i < numPoints; i ++)
+    {
+        if(points[i].pos[2] >= 0.001 || points[i].force[2] >= 0) continue;
+        
+        float Fp = sqrt(pow(points[i].force[0], 2) + pow(points[i].force[1], 2));
+        float Fn = abs(points[i].force[2]);
+        
+        
+        if(Fp < Fn * mu)
+        {
+            points[i].force[0] = points[i].force[0] - points[i].force[0];
+            points[i].force[1] = points[i].force[1] - points[i].force[1];
+        }
+        else
+        {
+            float kF = Fn * muk;
+            float kfv[3] = {points[i].velocity[0], points[i].velocity[1], 0};
+            normalizeVector(kfv);
+
+            for(int j = 0; j < 3; j ++)
+            {
+                points[i].force[j] = points[i].force[j] - kfv[j] * kF;
+            }
+        }
+        
+    }
+}
+
 void calcRestorationForce()
 {
     for(int i = 0; i < numPoints; i ++)
@@ -198,11 +246,6 @@ void calcRestorationForce()
     }
     
     return;
-}
-
-float calcDist(float p1[3], float p2[3])
-{
-    return sqrt(pow(p1[0] - p2[0], 2) + pow(p1[1] - p2[1], 2) + pow(p1[2] - p2[2], 2));
 }
 
 void calcVector(float vec[3], float p1[3], float p2[3])
@@ -233,157 +276,6 @@ void reverseVector(float vec[3])
     }
     
     return;
-}
-
-int initializeFeet(struct Point* points_start)
-{
-    float x[4] = {0, 1, 3, 4};
-    float y[5] = {0, 1, 2, 3, 5};
-    int p = 0;
-    
-    for(int i = 0; i < 4; i ++)
-    {
-        for(int j = 0; j < 5; j ++)
-        {
-            points_start[p].mass = 0.1;
-            for(int k = 0; k < 3; k ++)
-            {
-                points_start[p].velocity[k] = 0;
-                points_start[p].accel[k] = 0;
-                points_start[p].force[k] = 0;
-            }
-            
-            p ++;
-        }
-    }
-    
-    return p;
-}
-
-int initializeBody(struct Point* points_start)
-{
-    float x[5] = {0, 1, 2, 3, 4};
-    float y[5] = {0, 1, 2, 3, 5};
-    int p = 0;
-    
-    for(int i = 0; i < 5; i ++)
-    {
-        for(int j = 0; j < 5; j ++)
-        {
-            points_start[p].mass = 0.1;
-            for(int k = 0; k < 3; k ++)
-            {
-                points_start[p].velocity[k] = 0;
-                points_start[p].accel[k] = 0;
-                points_start[p].force[k] = 0;
-            }
-            
-            p ++;
-        }
-    }
-    
-    return p;
-}
-
-void intializeWalkingCubes()
-{
-    numPoints = 115;
-    int p = 0;
-    
-    for(int z = 0; z <= 5; z ++)
-    {
-        if(z == 0 || z == 1)
-        {
-            p += initializeFeet(&points[p]);
-        }
-        else
-        {
-            p += initializeBody(&points[p]);
-        }
-    }
-    
-    return;
-}
-
-void initializePointsCube()
-{
-    for(int i = 0; i < numPoints; i ++)
-    {
-        points[i].mass = 0.1;
-        for(int j = 0; j < 3; j ++)
-        {
-            points[i].velocity[j] = 0;
-            points[i].accel[j] = 0;
-            points[i].force[j] = 0;
-        }
-    }
-    
-//    float x[4] = {0, 0.6, 0.8, 1.4};
-//    float z[4] = {0.6, 1.4, 0, 0.8};
-    float x[4] = {0, 1, 0, 1};
-    float z[4] = {0, 0, 1, 1};
-    
-    float drop_height = 2;
-    
-    int p = 0;
-    for(int i = 0; i < 4; i ++)
-    {
-        for(int j = 0; j <= 1; j ++)
-        {
-            points[p].pos[0] = x[i] * 1;
-            points[p].pos[1] = j * 1;
-            points[p].pos[2] = z[i] * 1 + drop_height;
-            p ++;
-        }
-    }
-}
-
-void initializePointsTetrahedral()
-{
-    numPoints = 4;
-    for(int i = 0; i < numPoints; i ++)
-    {
-        points[i].mass = 0.1;
-        for(int j = 0; j < 3; j ++)
-        {
-            points[i].velocity[j] = 0;
-            points[i].accel[j] = 0;
-            points[i].force[j] = 0;
-        }
-    }
-    
-    float h = sqrt(3) * 0.5;
-    float hmid = h / 3;
-    float x[4] = {0, 0.5, 1, 0.5};
-    float y[4] = {0, h, 0, hmid};
-    float z[4] = {0, 0, 0, h};
-    
-    float drop_height = 0.2;
-    
-    int p = 0;
-    for(int i = 0; i < 4; i ++)
-    {
-        points[p].pos[0] = x[i] * 0.1;
-        points[p].pos[1] = y[i] * 0.1;
-        points[p].pos[2] = z[i] * 0.1 + drop_height;
-        p ++;
-    }
-}
-
-void initializeSprings()
-{
-    int p = 0;
-    for(int i = 0; i < numPoints; i ++)
-    {
-        for(int j = i + 1; j < numPoints; j ++)
-        {
-            springs[p].p1 = &points[i];
-            springs[p].p2 = &points[j];
-            springs[p].len = calcDist(points[i].pos, points[j].pos);
-            springs[p].k = 10000;
-            p ++;
-        }
-    }
 }
 
 float calcPotentialEnergy()

@@ -8,13 +8,10 @@
 #ifndef setPoints_hpp
 #define setPoints_hpp
 
-void intializeWalkingCubes();
-void initializePointsCube();
-void initializePointsTetrahedral();
-void initializeSprings();
 void updatePoints();
 void writeEnergy();
 void printPoints();
+void printSprings();
 float calcPotentialEnergy();
 float calcKineticEnergy();
 

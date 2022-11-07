@@ -5,7 +5,6 @@
 //  Created by Alice Chen on 2022/10/21.
 //
 
-#include "setPoints.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
@@ -32,8 +31,9 @@ using namespace glm;
 #include "common/shader.hpp"
 #include "utility.h"
 
-#define DRAW_LINES
-//#define DRAW_SURFACE
+#include "setPoints.hpp"
+#include "createObject.hpp"
+#include "evolve.hpp"
 
 /* window */
 const char windowTitle[20] = "A jumping cube";
@@ -48,19 +48,23 @@ const GLfloat color_data[] = {1.0f, 0.3f, 0.3f};
 
 /* object */
 extern const float TIME_STEP = 0.00002;
-extern const float MAX_TIME = 10.0;
-extern float T;
+extern const float MAX_TIME = 15.0;
+float T = 0;
 int drawEvery = 500;
 int drawCount = 0;
+
 extern int numPoints;
+extern int numSprings;
 extern struct Point points[MAXN];
 extern struct Spring springs[MAXN];
+
 const bool draw_surface = false;
 
 vector< vec3 > box_points_buffer_data;
 vector< vec3 > box_vertex_buffer_data;
 vector< vec3 > box_line_buffer_data;
 vector< vec3 > normal;
+vector< vec3 > material_color_buffer_data;
 
 /* floor */
 int floor_buffer_len = 6;
@@ -81,29 +85,28 @@ void testObject();
 
 int main()
 {
-    initializePointsCube();
-    initializeSprings();
+    srand(time(NULL));
+//    initializeWalkingCubes();
+//    randMaterial();
+//    initSpringsMaterial();
+    
+    initializeCube();
+    
     updateObject();
-    
-//    printPoints();
-//    auto start = chrono::high_resolution_clock::now();
-//    for(int i = 0; i < 1000; i ++)
-//    {
-//        updatePoints();
-//    }
-//    auto stop = chrono::high_resolution_clock::now();
-//        auto duration = duration_cast<chrono::microseconds>(stop - start);
-//        cout << "Time taken by function: "
-//             << duration.count() << " microseconds" << endl;
-    
-//    while(T < MAX_TIME)
-//    {
-//        updatePoints();
-//    }
 
-    draw();
-//    printPoints();
-//    writeEnergy();
+    auto start = chrono::high_resolution_clock::now();
+    while(T < MAX_TIME)
+    {
+        updatePoints();
+    }
+
+    auto stop = chrono::high_resolution_clock::now();
+    auto duration = duration_cast<chrono::microseconds>(stop - start);
+    cout << "Time taken by function: "
+         << duration.count() << " microseconds" << endl;
+
+//    draw();
+    writeEnergy();
     
     return 0;
 }
@@ -131,7 +134,7 @@ int draw( void )
     GLuint ViewMatrixID = glGetUniformLocation(programID, "View");
     
     /* set constant MVP matrix */
-    vec3 cameraPosition = vec3(-1, 7, 6);
+    vec3 cameraPosition = vec3(-1, 10, 10);
     mat4 ProjectionMatrix = perspective(radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
     mat4 ViewMatrix = lookAt(cameraPosition, vec3(0, 0, 0), vec3(0, 0, 1));
     mat4 ModelMatrix = mat4(1.0);
@@ -144,8 +147,13 @@ int draw( void )
     GLuint vertexbuffer;
     GLuint normalVertexbuffer;
 
-    int fragment_color_location = glGetUniformLocation(programID, "fragmentColor");
+    int fragment_color_location = glGetUniformLocation(programID, "uniformColor");
     int light_position_location = glGetUniformLocation(programID, "lightPosition_worldspace");
+    
+    GLuint colorbuffer;
+    glGenBuffers(1, &colorbuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+    glBufferData(GL_ARRAY_BUFFER, material_color_buffer_data.size() * sizeof(vec3), &material_color_buffer_data[0], GL_STATIC_DRAW);
     
     GLuint groundbuffer;
     glGenBuffers(1, &groundbuffer);
@@ -156,7 +164,7 @@ int draw( void )
         while(drawCount ++ < drawEvery)
         {
             updatePoints();
-            sleep(0.0005);
+//            sleep(0.001);
         }
         drawCount = 0;
         
@@ -232,6 +240,13 @@ int draw( void )
         /* color of box */
         glUniform3f(fragment_color_location, color_data[0], color_data[1], color_data[2]);
         glUniform3f(light_position_location, lightPosition.x, lightPosition.y, lightPosition.z);
+        
+        /* 3rd attribute buffer : color of lines
+         * Parameters: attribute, size, type, normalized?, stride, array buffer offset
+         */
+        glEnableVertexAttribArray(2);
+        glBindBuffer(GL_ARRAY_BUFFER, colorbuffer);
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void *) 0);
         
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
@@ -334,6 +349,7 @@ void updateObject()
 {
     box_points_buffer_data.clear();
     box_vertex_buffer_data.clear();
+    normal.clear();
     box_line_buffer_data.clear();
     
     for(int i = 0; i < numPoints; i ++)
@@ -341,41 +357,64 @@ void updateObject()
         box_points_buffer_data.push_back(vec3(points[i].pos[0], points[i].pos[1], points[i].pos[2]));
     }
     
-    for(int i = 0; i < numPoints - 2; i ++)
+//    for(int i = 0; i < numPoints - 2; i ++)
+//    {
+//        for(int j = i + 1; j < numPoints - 1; j ++)
+//        {
+//            for(int k = j + 1; k < numPoints; k ++)
+//            {
+//                /* don't know which is the correct direction so do both */
+//                box_vertex_buffer_data.push_back(box_points_buffer_data[i]);
+//                box_vertex_buffer_data.push_back(box_points_buffer_data[j]);
+//                box_vertex_buffer_data.push_back(box_points_buffer_data[k]);
+//
+//                box_vertex_buffer_data.push_back(box_points_buffer_data[k]);
+//                box_vertex_buffer_data.push_back(box_points_buffer_data[j]);
+//                box_vertex_buffer_data.push_back(box_points_buffer_data[i]);
+//            }
+//        }
+//    }
+//
+//    for(int i = 0; i < box_vertex_buffer_data.size(); i += 3)
+//    {
+//        vec3 v1 = box_vertex_buffer_data[i];
+//        vec3 v2 = box_vertex_buffer_data[i + 1];
+//        vec3 v3 = box_vertex_buffer_data[i + 2];
+//        vec3 edge1 = v2 - v1;
+//        vec3 edge2 = v3 - v1;
+//        normal.push_back((normalize(cross(edge1, edge2))));
+//    }
+    
+    for(int i = 0; i < numSprings; i ++)
     {
-        for(int j = i + 1; j < numPoints - 1; j ++)
+        box_line_buffer_data.push_back(vec3(springs[i].p1->pos[0], springs[i].p1->pos[1], springs[i].p1->pos[2]));
+        box_line_buffer_data.push_back(vec3(springs[i].p2->pos[0], springs[i].p2->pos[1], springs[i].p2->pos[2]));
+        
+        if(springs[i].muscle)
         {
-            for(int k = j + 1; k < numPoints; k ++)
+            if(springs[i].c != 0)
             {
-                /* don't know which is the correct direction so do both */
-                box_vertex_buffer_data.push_back(box_points_buffer_data[i]);
-                box_vertex_buffer_data.push_back(box_points_buffer_data[j]);
-                box_vertex_buffer_data.push_back(box_points_buffer_data[k]);
-                
-                box_vertex_buffer_data.push_back(box_points_buffer_data[k]);
-                box_vertex_buffer_data.push_back(box_points_buffer_data[j]);
-                box_vertex_buffer_data.push_back(box_points_buffer_data[i]);
+                material_color_buffer_data.push_back(vec3(1.0f, 0, 0));
+                material_color_buffer_data.push_back(vec3(1.0f, 0, 0));
             }
+            else
+            {
+                material_color_buffer_data.push_back(vec3(0.7f, 0.3f, 0));
+                material_color_buffer_data.push_back(vec3(0.7f, 0.3f, 0));
+            }
+            
         }
-    }
-
-    for(int i = 0; i < box_vertex_buffer_data.size(); i += 3)
-    {
-        vec3 v1 = box_vertex_buffer_data[i];
-        vec3 v2 = box_vertex_buffer_data[i + 1];
-        vec3 v3 = box_vertex_buffer_data[i + 2];
-        vec3 edge1 = v2 - v1;
-        vec3 edge2 = v3 - v1;
-        normal.push_back((normalize(cross(edge1, edge2))));
-    }
-
-    for(int i = 0; i < numPoints - 1; i ++)
-    {
-        for(int j = i + 1; j < numPoints; j ++)
+        else if(springs[i].k > 5000)
         {
-            box_line_buffer_data.push_back(box_points_buffer_data[i]);
-            box_line_buffer_data.push_back(box_points_buffer_data[j]);
+            material_color_buffer_data.push_back(vec3(0.0f, 1.0f, 0));
+            material_color_buffer_data.push_back(vec3(0.0f, 1.0f, 0));
         }
+        else
+        {
+            material_color_buffer_data.push_back(vec3(0, 0, 1.0f));
+            material_color_buffer_data.push_back(vec3(0, 0, 1.0f));
+        }
+        
     }
     
     return;

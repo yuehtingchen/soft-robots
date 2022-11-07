@@ -19,12 +19,28 @@ struct Point
     float force[3];
 };
 
+/* length = len + b * sin(omega * T + c) */
 struct Spring
 {
     struct Point* p1;
     struct Point* p2;
     float len;
     float k;
+    bool muscle = false;
+    float omega;
+    float b;
+    float c;
+};
+
+struct Material
+{
+    struct Point* p;
+    float len;
+    float k;
+    bool muscle = false;
+    float omega;
+    float b;
+    float c;
 };
 
 #endif /* utility_h */

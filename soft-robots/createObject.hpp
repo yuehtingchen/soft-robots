@@ -8,6 +8,9 @@
 #ifndef createObject_hpp
 #define createObject_hpp
 
-#include <stdio.h>
+void initializeCube();
+void initializeTetrahedral();
+void initializeWalkingCubes();
+float calcDist(float p1[3], float p2[3]);
 
 #endif /* createObject_hpp */

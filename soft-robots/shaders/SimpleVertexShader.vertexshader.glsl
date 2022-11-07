@@ -2,11 +2,13 @@
 
 layout(location = 0) in vec3 vertexPosition_modelspace;
 layout(location = 1) in vec3 vertexNormal_modelspace;
+layout(location = 2) in vec3 vertexColor;
 
 out vec3 vertexPosition_worldspace;
 out vec3 vertexNormal_cameraspace;
 out vec3 eyeDirection_cameraspace;
 out vec3 lightDirection_cameraspace;
+out vec3 fragmentColor;
 
 uniform mat4 MVP;
 uniform mat4 Model;
@@ -27,6 +29,7 @@ void main()
     vec3 lightPosition_cameraspace = (View * Model * vec4(lightPosition_worldspace, 1)).xyz;
     lightDirection_cameraspace = lightPosition_cameraspace - eyeDirection_cameraspace;
     
+    fragmentColor = vertexColor;
 }
 
 
