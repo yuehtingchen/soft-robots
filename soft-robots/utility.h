@@ -34,7 +34,7 @@ struct Spring
 
 struct Material
 {
-    struct Point* p;
+    int pIdx;
     double len;
     double k;
     bool muscle = false;

@@ -10,6 +10,7 @@
 
 void initializeCube();
 void initializeTetrahedral();
+void initializeTwoCubes();
 void initializeWalkingCubes();
 double calcDist(double p1[3], double p2[3]);
 

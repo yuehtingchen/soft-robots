@@ -49,7 +49,7 @@ extern const double TIME_STEP;
 extern const double MAX_TIME;
 extern double T;
 
-int drawEvery = 1000;
+int drawEvery = 500;
 int drawCount = 0;
 
 extern int numPoints;
@@ -138,7 +138,6 @@ int draw( void )
         {
             updatePoints();
             T += TIME_STEP;
-//            sleep(0.001);
         }
         drawCount = 0;
         
@@ -331,34 +330,6 @@ void updateObject()
         box_points_buffer_data.push_back(vec3(points[i].pos[0], points[i].pos[1], points[i].pos[2]));
     }
     
-//    for(int i = 0; i < numPoints - 2; i ++)
-//    {
-//        for(int j = i + 1; j < numPoints - 1; j ++)
-//        {
-//            for(int k = j + 1; k < numPoints; k ++)
-//            {
-//                /* don't know which is the correct direction so do both */
-//                box_vertex_buffer_data.push_back(box_points_buffer_data[i]);
-//                box_vertex_buffer_data.push_back(box_points_buffer_data[j]);
-//                box_vertex_buffer_data.push_back(box_points_buffer_data[k]);
-//
-//                box_vertex_buffer_data.push_back(box_points_buffer_data[k]);
-//                box_vertex_buffer_data.push_back(box_points_buffer_data[j]);
-//                box_vertex_buffer_data.push_back(box_points_buffer_data[i]);
-//            }
-//        }
-//    }
-//
-//    for(int i = 0; i < box_vertex_buffer_data.size(); i += 3)
-//    {
-//        vec3 v1 = box_vertex_buffer_data[i];
-//        vec3 v2 = box_vertex_buffer_data[i + 1];
-//        vec3 v3 = box_vertex_buffer_data[i + 2];
-//        vec3 edge1 = v2 - v1;
-//        vec3 edge2 = v3 - v1;
-//        normal.push_back((normalize(cross(edge1, edge2))));
-//    }
-    
     for(int i = 0; i < numSprings; i ++)
     {
         box_line_buffer_data.push_back(vec3(springs[i].p1->pos[0], springs[i].p1->pos[1], springs[i].p1->pos[2]));
@@ -389,6 +360,50 @@ void updateObject()
             material_color_buffer_data.push_back(vec3(0, 0, 1.0f));
         }
         
+    }
+    
+    for(int i = 0; i < numSprings - 2; i ++)
+    {
+        for(int j = i + 1; j < numSprings - 1; j ++)
+        {
+            if(springs[i].p1 != springs[j].p1 &&
+               springs[i].p2 != springs[j].p2 &&
+               springs[i].p1 != springs[j].p2 &&
+               springs[i].p2 != springs[j].p1)
+            {
+                continue;
+            }
+            
+            for(int k = j + 1; k < numSprings; k ++)
+            {
+                if(springs[k].p1 != springs[j].p1 &&
+                   springs[i].p2 != springs[j].p2 &&
+                   springs[i].p1 != springs[j].p2 &&
+                   springs[i].p2 != springs[j].p1)
+                {
+                    continue;
+                }
+                
+                /* don't know which is the correct direction so do both */
+                box_vertex_buffer_data.push_back(box_points_buffer_data[i]);
+                box_vertex_buffer_data.push_back(box_points_buffer_data[j]);
+                box_vertex_buffer_data.push_back(box_points_buffer_data[k]);
+
+                box_vertex_buffer_data.push_back(box_points_buffer_data[k]);
+                box_vertex_buffer_data.push_back(box_points_buffer_data[j]);
+                box_vertex_buffer_data.push_back(box_points_buffer_data[i]);
+            }
+        }
+    }
+
+    for(int i = 0; i < box_vertex_buffer_data.size(); i += 3)
+    {
+        vec3 v1 = box_vertex_buffer_data[i];
+        vec3 v2 = box_vertex_buffer_data[i + 1];
+        vec3 v3 = box_vertex_buffer_data[i + 2];
+        vec3 edge1 = v2 - v1;
+        vec3 edge2 = v3 - v1;
+        normal.push_back((normalize(cross(edge1, edge2))));
     }
     
     return;

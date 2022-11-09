@@ -26,11 +26,8 @@ const int K_HARD = 10000;
 const int K_SOFT = 1000;
 const double PI = 3.1415926;
 
-int materialsNum = 0;
-struct Material materials[MAXN];
-
-void initSpringsMaterial(struct Material materials[MAXN], int materialsNum);
-void randInitMaterial(struct Material materials[MAXN], int* materialsNum);
+void applyMaterialtoSprings(struct Material materials[MAXN], int materialsNum);
+void randMaterial(struct Material* material, int location);
 void randMaterial(struct Material* material, struct Point* location);
 void hardSupport(struct Material* material);
 void softSupport(struct Material* material);
@@ -56,7 +53,7 @@ double speed(struct Point points[MAXN])
     return calcDist(initXY, finalXY) / (double) MAX_TIME;
 }
 
-void initSpringsMaterial(struct Material materials[MAXN], int materialsNum)
+void applyMaterialtoSprings(struct Material materials[MAXN], int materialsNum)
 {
     for(int i = 0; i < numSprings; i ++)
     {
@@ -64,10 +61,10 @@ void initSpringsMaterial(struct Material materials[MAXN], int materialsNum)
         struct Spring *spring = &springs[i];
         
         int materialIdx = 0;
-        double minDist = calcDist(spring->p1->pos, materials[0].p->pos);
+        double minDist = calcDist(spring->p1->pos, points[materials[0].pIdx].pos);
         for(int j = 1; j < materialsNum; j ++)
         {
-            double dist = calcDist(spring->p1->pos, materials[j].p->pos);
+            double dist = calcDist(spring->p1->pos, points[materials[j].pIdx].pos);
             if(dist < minDist)
             {
                 materialIdx = j;
@@ -95,7 +92,7 @@ void randInitMaterial(struct Material materials[MAXN], int* materialsNum)
     {
         int selectLocation = random(numPoints / *materialsNum * i, numPoints / *materialsNum * (i + 1));
         
-        randMaterial(&materials[i], &points[selectLocation]);
+        randMaterial(&materials[i], selectLocation);
     }
 }
 
@@ -120,15 +117,15 @@ void mutateMaterial(struct Material materials[MAXN], int* materialsNum)
     {
         int selectMaterialIdx = random(0, *materialsNum - 1);
         struct Material *material = &newMaterials[selectMaterialIdx];
-        randMaterial(material, material->p);
+        randMaterial(material, material->pIdx);
     }
     else if(selectMutate == 2)
     {
         int selectMaterialIdx1 = random(0, *materialsNum - 1);
         int selectMaterialIdx2 = (selectMaterialIdx1 + random(1, *materialsNum - 1)) % *materialsNum; // prevent choosing the same index
         
-        newMaterials[selectMaterialIdx1].p = materials[selectMaterialIdx2].p;
-        newMaterials[selectMaterialIdx2].p = materials[selectMaterialIdx1].p;
+        newMaterials[selectMaterialIdx1].pIdx = materials[selectMaterialIdx2].pIdx;
+        newMaterials[selectMaterialIdx2].pIdx = materials[selectMaterialIdx1].pIdx;
     }
     else if(selectMutate == 3)
     {
@@ -156,14 +153,14 @@ void mutateMaterial(struct Material materials[MAXN], int* materialsNum)
             
             for(int i = 0; i < *materialsNum; i ++)
             {
-                if(materials[i].p == &points[selectLocation])
+                if(materials[i].pIdx == selectLocation)
                 {
                     invalid = true;
                 }
             }
         }
         
-        randMaterial(&newMaterials[*materialsNum], &points[selectLocation]);
+        randMaterial(&newMaterials[*materialsNum], selectLocation);
         newMaterialsNum ++;
     }
     
@@ -176,9 +173,27 @@ void mutateMaterial(struct Material materials[MAXN], int* materialsNum)
     return;
 }
 
-void crossOver(struct Material materials1[MAXN], int* materialsNum1, struct Material materials2[MAXN], int* materialsNum2)
+/* overwrite from left index (inclusive) to right index (not inclusive) */
+void crossOver(struct Material materials1[MAXN], int* materialsNum1, struct Material materials2[MAXN], int* materialsNum2, struct Material offspring[MAXN], int* offspringNum)
 {
+    *offspringNum = *materialsNum2;
+    for(int i = 0; i < *materialsNum2; i ++)
+    {
+        offspring[i] = materials2[i];
+    }
     
+    int minMaterialsNum = *materialsNum1 < *materialsNum2 ? *materialsNum1 : *materialsNum2;
+    int left = random(1, minMaterialsNum - 2);
+    int right = random(left + 1, minMaterialsNum - 1);
+    int offset1 = random(0, *materialsNum1 - minMaterialsNum);
+    int offset2 = random(0, *materialsNum2 - minMaterialsNum);
+    
+    for(int i = left; i < right; i ++)
+    {
+        offspring[i + offset2] = materials1[i + offset1];
+    }
+    
+    return;
 }
 
 /*
@@ -187,7 +202,7 @@ void crossOver(struct Material materials1[MAXN], int* materialsNum1, struct Mate
  * random muscle (2, 3) (either contract or expand first)
  *
  */
-void randMaterial(struct Material* material, struct Point* location)
+void randMaterial(struct Material* material, int location)
 {
     int selectMaterial = random(0, 3);
     
@@ -195,19 +210,19 @@ void randMaterial(struct Material* material, struct Point* location)
     if(selectMaterial == 0)
     {
         hardSupport(material);
-        material->p = location;
+        material->pIdx = location;
     }
     /* soft support */
     else if(selectMaterial == 1)
     {
         softSupport(material);
-        material->p = location;
+        material->pIdx = location;
     }
     /* random muscle */
     else if(selectMaterial == 2 || selectMaterial == 3)
     {
         randMuscle(material);
-        material->p = location;
+        material->pIdx = location;
     }
 }
 

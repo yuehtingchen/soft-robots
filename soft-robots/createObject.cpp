@@ -22,8 +22,9 @@ double calcDist(double p1[3], double p2[3]);
 void initializePointsCube();
 void initializePointsTetrahedral();
 void initializeSprings();
+int initializePointsTwoCubes();
 void initializePointsWalkingCube();
-void initializeSpringsWalkingCube();
+void initializeSpringsForEachCube();
 
 void initializeCube()
 {
@@ -39,11 +40,18 @@ void initializeTetrahedral()
     initializeSprings();
 }
 
+void initializeTwoCubes()
+{
+    numPoints = 12;
+    initializePointsTwoCubes();
+    initializeSpringsForEachCube();
+}
+
 void initializeWalkingCubes()
 {
     numPoints = 115;
     initializePointsWalkingCube();
-    initializeSpringsWalkingCube();
+    initializeSpringsForEachCube();
 }
 
 void initializePointsCube()
@@ -59,10 +67,10 @@ void initializePointsCube()
         }
     }
     
-    float x[4] = {0, 0.6, 0.8, 1.4};
-    float z[4] = {0.6, 1.4, 0, 0.8};
-//    float x[4] = {0, 1, 0, 1};
-//    float z[4] = {0, 0, 1, 1};
+//    float x[4] = {0, 0.6, 0.8, 1.4};
+//    float z[4] = {0.6, 1.4, 0, 0.8};
+    float x[4] = {0, 1, 0, 1};
+    float z[4] = {0, 0, 1, 1};
     
     float drop_height = 2;
     
@@ -134,6 +142,39 @@ void initializeSprings()
         }
     }
     numSprings = p;
+}
+
+int initializePointsTwoCubes()
+{
+    for(int i = 0; i < numPoints; i ++)
+    {
+        points[i].mass = 0.1;
+        for(int j = 0; j < 3; j ++)
+        {
+            points[i].velocity[j] = 0;
+            points[i].accel[j] = 0;
+            points[i].force[j] = 0;
+        }
+    }
+    
+    double x[4] = {0.0, 1.0, 2.0};
+    
+    int p = 0;
+    for(int i = 0; i < 3; i ++)
+    {
+        for(int y = 0; y <= 1; y ++)
+        {
+            for(int z = 0; z <= 1; z ++)
+            {
+                points[p].pos[0] = x[i];
+                points[p].pos[1] = y;
+                points[p].pos[2] = z;
+                p ++;
+            }
+        }
+    }
+    
+    return p;
 }
 
 int initializeFeet(struct Point* points_start, int z)
@@ -212,7 +253,7 @@ void initializePointsWalkingCube()
     return;
 }
 
-void initializeSpringsWalkingCube()
+void initializeSpringsForEachCube()
 {
     int p = 0;
     
