@@ -32,22 +32,11 @@ void main()
     vec3 r = reflect(-l,n);
     float cosAlpha = clamp(dot(e, r), 0, 1);
     
-//    if(gl_FrontFacing)
-//    {
-        color =
-            /* Ambient : simulates indirect lighting */
-            ambientColor +
-            /* Diffuse : "color" of the object */
-            fragmentColor * lightColor * lightPower * cosTheta * (1 / (dist * dist)) +
-            /* Specular : reflective highlight, like a mirror */
-            lightColor * lightColor * lightPower * pow(cosAlpha,5) / (dist * dist);
-//    }
-    
-    
-//    else
-//    {
-//        color = vec3(1.0f, 0.0f, 0.0f);
-//    }
-    
-//    color = fragmentColor;
+    color =
+        /* Ambient : simulates indirect lighting */
+        ambientColor +
+        /* Diffuse : "color" of the object */
+        fragmentColor * lightColor * lightPower * cosTheta * (1 / (dist * dist)) +
+        /* Specular : reflective highlight, like a mirror */
+        lightColor * lightColor * lightPower * pow(cosAlpha,5) / (dist * dist);
 }

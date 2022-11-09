@@ -12,11 +12,11 @@
 
 struct Point
 {
-    float mass;
-    float pos[3];
-    float velocity[3];
-    float accel[3];
-    float force[3];
+    double mass;
+    double pos[3];
+    double velocity[3];
+    double accel[3];
+    double force[3];
 };
 
 /* length = len + b * sin(omega * T + c) */
@@ -24,23 +24,23 @@ struct Spring
 {
     struct Point* p1;
     struct Point* p2;
-    float len;
-    float k;
+    double len;
+    double k;
     bool muscle = false;
-    float omega;
-    float b;
-    float c;
+    double omega;
+    double b;
+    double c;
 };
 
 struct Material
 {
     struct Point* p;
-    float len;
-    float k;
+    double len;
+    double k;
     bool muscle = false;
-    float omega;
-    float b;
-    float c;
+    double omega;
+    double b;
+    double c;
 };
 
 #endif /* utility_h */

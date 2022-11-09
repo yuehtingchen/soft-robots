@@ -11,6 +11,6 @@
 void initializeCube();
 void initializeTetrahedral();
 void initializeWalkingCubes();
-float calcDist(float p1[3], float p2[3]);
+double calcDist(double p1[3], double p2[3]);
 
 #endif /* createObject_hpp */

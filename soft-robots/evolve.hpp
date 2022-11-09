@@ -8,7 +8,9 @@
 #ifndef evolve_hpp
 #define evolve_hpp
 
-void initSpringsMaterial();
-void randMaterial();
+void initSpringsMaterial(struct Material* materials, int materialsNum);
+void randInitMaterial(struct Material* materials, int* materialsNum);
+void mutateMaterial(struct Material* materials, int* materialsNum);
+double speed(struct Point*);
 
 #endif /* evolve_hpp */

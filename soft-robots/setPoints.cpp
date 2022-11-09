@@ -18,22 +18,22 @@ using namespace std;
 #include "createObject.hpp"
 #include "utility.h"
 
-extern const float TIME_STEP;
-extern float T;
+extern const double TIME_STEP;
+extern double T;
 
-const float GRAVITY[3] = {0, 0, -9.81};
+const double GRAVITY[3] = {0, 0, -9.81};
 const int kc = 10000; // restoration force
-const bool damping = false;
-const float DAMPING_CONST = 0.99999;
-const float mu = 1.0; // friction
-const float muk = 0.8; // friction
+const bool damping = true;
+const double DAMPING_CONST = 0.99999;
+const double mu = 1.0; // friction
+const double muk = 0.8; // friction
 
 extern int numPoints;
 extern int numSprings;
 extern struct Point points[MAXN];
 extern struct Spring springs[MAXN];
 
-float energy[1000000][2];
+double energy[1000000][2];
 int energy_len = 0;
 
 void writeEnergy();
@@ -46,26 +46,23 @@ void calcSpringForce();
 void calcGravitationalForce();
 void calcFriction();
 void calcRestorationForce();
-void calcVector(float vec[3], float p1[3], float p2[3]);
-void normalizeVector(float vec[3]);
-void reverseVector(float vec[3]);
-float calcPotentialEnergy();
-float calcKineticEnergy();
+void calcVector(double vec[3], double p1[3], double p2[3]);
+void normalizeVector(double vec[3]);
+void reverseVector(double vec[3]);
+double calcPotentialEnergy();
+double calcKineticEnergy();
 
 
 void updatePoints()
 {
     calcForce();
 
-    float ke = calcKineticEnergy();
-    float pe = calcPotentialEnergy();
-    energy[energy_len][0] = ke;
-    energy[energy_len ++][1] = pe;
+//    double ke = calcKineticEnergy();
+//    double pe = calcPotentialEnergy();
+//    energy[energy_len][0] = ke;
+//    energy[energy_len ++][1] = pe;
 
     updatePointsPos();
-    
-    T += TIME_STEP;
-    
     return;
 }
 
@@ -161,17 +158,17 @@ void calcSpringForce()
     {
         struct Point *p1 = springs[i].p1;
         struct Point *p2 = springs[i].p2;
-        float k = springs[i].k;
-        float len = springs[i].len;
+        double k = springs[i].k;
+        double len = springs[i].len;
         
         if(springs[i].muscle)
         {
             len = len + springs[i].b * sin(springs[i].omega * T + springs[i].c);
         }
         
-        float dist = calcDist(p1->pos, p2->pos);
-        float force = k * (dist - len);
-        float vec_p1_p2[3];
+        double dist = calcDist(p1->pos, p2->pos);
+        double force = k * (dist - len);
+        double vec_p1_p2[3];
         calcVector(vec_p1_p2, p1->pos, p2->pos);
         normalizeVector(vec_p1_p2);
         
@@ -206,11 +203,10 @@ void calcFriction()
 {
     for(int i = 0; i < numPoints; i ++)
     {
-        if(points[i].pos[2] >= 0.001 || points[i].force[2] >= 0) continue;
+        if(points[i].pos[2] > 0 || points[i].force[2] > 0) continue;
         
-        float Fp = sqrt(pow(points[i].force[0], 2) + pow(points[i].force[1], 2));
-        float Fn = abs(points[i].force[2]);
-        
+        double Fp = sqrt(pow(points[i].force[0], 2) + pow(points[i].force[1], 2));
+        double Fn = -1 * points[i].force[2];
         
         if(Fp < Fn * mu)
         {
@@ -219,13 +215,14 @@ void calcFriction()
         }
         else
         {
-            float kF = Fn * muk;
-            float kfv[3] = {points[i].velocity[0], points[i].velocity[1], 0};
-            normalizeVector(kfv);
+            double kF = Fn * muk;
+            double a[3] = {points[i].force[0] / points[i].mass, points[i].force[1] / points[i].mass, 0.0};
+            double v[3] = {points[i].velocity[0] + a[0] * TIME_STEP, points[i].velocity[1] + a[1] * TIME_STEP, 0};
+            normalizeVector(v);
 
             for(int j = 0; j < 3; j ++)
             {
-                points[i].force[j] = points[i].force[j] - kfv[j] * kF;
+                points[i].force[j] = points[i].force[j] - v[j] * kF;
             }
         }
         
@@ -238,7 +235,7 @@ void calcRestorationForce()
     {
         if(points[i].pos[2] >= 0) continue;
         
-        float force[3] = {0, 0, -1 * kc * points[i].pos[2]};
+        double force[3] = {0, 0, -1 * kc * points[i].pos[2]};
         for(int j = 0; j < 3; j ++)
         {
             points[i].force[j] += force[j];
@@ -248,7 +245,7 @@ void calcRestorationForce()
     return;
 }
 
-void calcVector(float vec[3], float p1[3], float p2[3])
+void calcVector(double vec[3], double p1[3], double p2[3])
 {
     vec[0] = p2[0] - p1[0];
     vec[1] = p2[1] - p1[1];
@@ -257,9 +254,9 @@ void calcVector(float vec[3], float p1[3], float p2[3])
     return;
 }
 
-void normalizeVector(float vec[3])
+void normalizeVector(double vec[3])
 {
-    float denom = sqrt(pow(vec[0], 2) + pow(vec[1], 2) + pow(vec[2], 2));
+    double denom = sqrt(pow(vec[0], 2) + pow(vec[1], 2) + pow(vec[2], 2));
     for(int i = 0; i < 3; i ++)
     {
         vec[i] = vec[i] / denom;
@@ -268,7 +265,7 @@ void normalizeVector(float vec[3])
     return;
 }
 
-void reverseVector(float vec[3])
+void reverseVector(double vec[3])
 {
     for(int i = 0; i < 3; i ++)
     {
@@ -278,9 +275,9 @@ void reverseVector(float vec[3])
     return;
 }
 
-float calcPotentialEnergy()
+double calcPotentialEnergy()
 {
-    float energy = 0;
+    double energy = 0;
     for(int i = 0; i < numPoints; i ++)
     {
         energy += points[i].mass * -1 * GRAVITY[2] * points[i].pos[2];
@@ -288,12 +285,12 @@ float calcPotentialEnergy()
     
     for(int i = 0; i < numSprings; i ++)
     {
-        float len = springs[i].len;
-        float k = springs[i].k;
-        float* p1 = springs[i].p1->pos;
-        float* p2 = springs[i].p2->pos;
+        double len = springs[i].len;
+        double k = springs[i].k;
+        double* p1 = springs[i].p1->pos;
+        double* p2 = springs[i].p2->pos;
         
-        float x = calcDist(p1, p2) - len;
+        double x = calcDist(p1, p2) - len;
         
         energy += 0.5 * k * pow(x, 2);
     }
@@ -307,12 +304,12 @@ float calcPotentialEnergy()
     return energy;
 }
 
-float calcKineticEnergy()
+double calcKineticEnergy()
 {
-    float energy = 0;
+    double energy = 0;
     for(int i = 0; i < numPoints; i ++)
     {
-        float v = sqrt(pow(points[i].velocity[0], 2) + pow(points[i].velocity[1], 2) + pow(points[i].velocity[2], 2));
+        double v = sqrt(pow(points[i].velocity[0], 2) + pow(points[i].velocity[1], 2) + pow(points[i].velocity[2], 2));
         energy += 0.5 * points[i].mass * pow(v, 2);
     }
     

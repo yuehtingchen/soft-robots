@@ -15,10 +15,10 @@ struct Point points[MAXN];
 struct Spring springs[MAXN];
 
 const bool breathing = false;
-const float OMEGA = 3.1415926;
-const float b = 0.05;
+const double OMEGA = 3.1415926;
+const double b = 0.05;
 
-float calcDist(float p1[3], float p2[3]);
+double calcDist(double p1[3], double p2[3]);
 void initializePointsCube();
 void initializePointsTetrahedral();
 void initializeSprings();
@@ -93,13 +93,13 @@ void initializePointsTetrahedral()
         }
     }
     
-    float h = sqrt(3) * 0.5;
-    float hmid = h / 3;
-    float x[4] = {0, 0.5, 1, 0.5};
-    float y[4] = {0, h, 0, hmid};
-    float z[4] = {0, 0, 0, h};
+    double h = sqrt(3) * 0.5;
+    double hmid = h / 3;
+    double x[4] = {0, 0.5, 1, 0.5};
+    double y[4] = {0, h, 0, hmid};
+    double z[4] = {0, 0, 0, h};
     
-    float drop_height = 0.2;
+    double drop_height = 0.2;
     
     int p = 0;
     for(int i = 0; i < 4; i ++)
@@ -138,8 +138,8 @@ void initializeSprings()
 
 int initializeFeet(struct Point* points_start, int z)
 {
-    float x[4] = {0, 1, 3, 4};
-    float y[5] = {0, 1, 2, 3, 4};
+    double x[4] = {0, 1, 3, 4};
+    double y[5] = {0, 1, 2, 3, 4};
     int p = 0;
     
     for(int i = 0; i < 4; i ++)
@@ -160,8 +160,8 @@ int initializeFeet(struct Point* points_start, int z)
 
 int initializeBody(struct Point* points_start, int z)
 {
-    float x[5] = {0, 1, 2, 3, 4};
-    float y[5] = {0, 1, 2, 3, 4};
+    double x[5] = {0, 1, 2, 3, 4};
+    double y[5] = {0, 1, 2, 3, 4};
     int p = 0;
     
     for(int i = 0; i < 5; i ++)
@@ -238,7 +238,7 @@ void initializeSpringsWalkingCube()
     return;
 }
 
-float calcDist(float p1[3], float p2[3])
+double calcDist(double p1[3], double p2[3])
 {
     return sqrt(pow(p1[0] - p2[0], 2) + pow(p1[1] - p2[1], 2) + pow(p1[2] - p2[2], 2));
 }

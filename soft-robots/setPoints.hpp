@@ -12,7 +12,7 @@ void updatePoints();
 void writeEnergy();
 void printPoints();
 void printSprings();
-float calcPotentialEnergy();
-float calcKineticEnergy();
+double calcPotentialEnergy();
+double calcKineticEnergy();
 
 #endif /* draw_hpp */
