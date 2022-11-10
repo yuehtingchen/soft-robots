@@ -32,6 +32,7 @@ using namespace glm;
 #include "common/shader.hpp"
 #include "utility.h"
 #include "setPoints.hpp"
+#include "evolve.hpp"
 
 /* window */
 const char windowTitle[20] = "A jumping cube";
@@ -49,7 +50,7 @@ extern const double  TIME_STEP;
 extern const double MAX_TIME;
 extern double T;
 
-int drawEvery = 500;
+int drawEvery = 1000;
 int drawCount = 0;
 
 extern int numPoints;
@@ -152,6 +153,13 @@ int draw( void )
 //        mat4 ViewMatrix = getViewMatrix();
 //        mat4 ModelMatrix = mat4(1.0);
 //        mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
+        
+        /* compute MVP to follow object */
+        double centerPos[3];
+        getCenterOfMass(points, centerPos);
+        cameraPosition = vec3(-1 + centerPos[0], 30, 1);
+        ViewMatrix = lookAt(cameraPosition, vec3(centerPos[0], centerPos[1], 0), vec3(0, 0, 1));
+         MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
         
         /* draw floor */
         drawFloor(floorProgramID, groundbuffer, MVP);
