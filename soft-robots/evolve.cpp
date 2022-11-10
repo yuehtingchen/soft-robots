@@ -33,7 +33,7 @@ void randMaterial(struct Material* material, struct Point* location);
 void hardSupport(struct Material* material);
 void softSupport(struct Material* material);
 void randMuscle(struct Material* material);
-void getCenterOfMass(struct Point points[MAXN], double centerPos[2]);
+void getCenterOfMass(struct Point points[MAXN], double centerPos[3]);
 void copyMaterial(struct Material* materialSrc, struct Material* materialDest, int materialsNum);
 int random(int low, int high);
 

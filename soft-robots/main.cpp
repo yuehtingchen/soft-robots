@@ -29,14 +29,15 @@ extern int numSprings;
 extern struct Point points[MAXN];
 extern struct Spring springs[MAXN];
 
-const int testNum = 1;
+const int testNum = 5;
 const int evaluationTimes = 10;
 const int sampleSize = 10;
 const int selectInterval = 5;
 
 double bestSpeed[evaluationTimes];
-char filenameSpeed[100] = "/Users/CJChen/Desktop/CourseworksF2022/softRobotDocs/data/";
-char filenameMaterial[100] = "/Users/CJChen/Desktop/CourseworksF2022/softRobotDocs/data/";
+char folderName[100] = "/Users/CJChen/Desktop/CourseworksF2022/softRobotDocs/data/";
+char filenameSpeed[100];
+char filenameMaterial[100];
 
 int selectRun = 0;
 int selectObject = 0;
@@ -60,30 +61,48 @@ int main()
     /* 0: random, 1: hillClimber, 2: evolutionAlgo */
     selectRun = 0;
     /* 0: cube, 1: 2 cubes, 2: walking cubes*/
-    selectObject = 1;
-
-    strcat(filenameSpeed, "twoCubes/");
-    strcat(filenameMaterial, "twoCubes/");
+    selectObject = 2;
+    
+    strcat(folderName, "walkingCubes/");
 
     auto start = chrono::high_resolution_clock::now();
     for(int i = 0; i < testNum; i ++)
     {
+        filenameSpeed[0] = 0;
+        filenameMaterial[0] = 0;
+        strcat(filenameSpeed, folderName);
+        strcat(filenameMaterial, folderName);
+
+        char tmpfilenameSpeed[100];
+        char tmpfilenameMaterial[100];
+        snprintf(tmpfilenameSpeed, 12, "speed_%d.csv", i + 1);
+        snprintf(tmpfilenameMaterial, 15, "material_%d.txt", i + 1);
+
         if(selectRun == 0)
         {
-            strcat(filenameSpeed, "RM/speed.csv");
-            strcat(filenameMaterial, "RM/material.txt");
+            strcat(filenameSpeed, "RM/");
+            strcat(filenameSpeed, tmpfilenameSpeed);
+
+            strcat(filenameMaterial, "RM/");
+            strcat(filenameMaterial, tmpfilenameMaterial);
             randomSearch();
         }
         else if(selectRun == 1)
         {
-            strcat(filenameSpeed, "HC/speed.csv");
-            strcat(filenameMaterial, "HC/material.txt");
+            strcat(filenameSpeed, "HC/");
+            strcat(filenameSpeed, tmpfilenameSpeed);
+
+            strcat(filenameMaterial, "HC/");
+            strcat(filenameMaterial, tmpfilenameMaterial);
             hillClimber();
         }
         else if(selectRun == 2)
         {
-            strcat(filenameSpeed, "EA/speed.csv");
-            strcat(filenameMaterial, "EA/material.txt");
+            strcat(filenameSpeed, "EA/");
+            strcat(filenameSpeed, tmpfilenameSpeed);
+
+            strcat(filenameMaterial, "EA/");
+            strcat(filenameMaterial, tmpfilenameMaterial);
             evolutionAlgo();
         }
         writeSpeed();
@@ -91,10 +110,12 @@ int main()
     auto stop = chrono::high_resolution_clock::now();
     auto duration = duration_cast<chrono::microseconds>(stop - start);
     cout << "Time taken by function: "
-         << duration.count() << " microseconds" << endl;
+         << duration.count() / 1000000 << " seconds" << endl;
     
     /* draw best robot */
     initObject();
+    strcat(filenameMaterial, folderName);
+    strcat(filenameMaterial, "EA/material_1.txt");
     struct Material materials[MAXN];
     int materialsNum = 0;
     materialsNum = readMaterial(filenameMaterial, materials);
