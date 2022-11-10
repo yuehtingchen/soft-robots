@@ -18,7 +18,7 @@ using namespace std;
 #include "setPoints.hpp"
 #include "createObject.hpp"
 #include "evolve.hpp"
-#include "draw.hpp"
+// #include "draw.hpp"
 
 extern const double TIME_STEP = 0.0001;
 extern const double MAX_TIME = 15.0;
@@ -108,11 +108,12 @@ int main()
         writeSpeed();
     }
     auto stop = chrono::high_resolution_clock::now();
-    auto duration = duration_cast<chrono::microseconds>(stop - start);
+    auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
     cout << "Time taken by function: "
          << duration.count() / 1000000 << " seconds" << endl;
     
     /* draw best robot */
+    /*
     initObject();
     strcat(filenameMaterial, folderName);
     strcat(filenameMaterial, "EA/material_1.txt");
@@ -121,7 +122,7 @@ int main()
     materialsNum = readMaterial(filenameMaterial, materials);
     applyMaterialtoSprings(materials, materialsNum);
     draw();
-    
+    */ 
     return 0;
 }
 
