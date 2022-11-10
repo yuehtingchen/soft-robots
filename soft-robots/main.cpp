@@ -32,6 +32,7 @@ extern struct Spring springs[MAXN];
 const int testNum = 1;
 const int evaluationTimes = 10;
 const int sampleSize = 10;
+const int selectInterval = 5;
 
 double bestSpeed[evaluationTimes];
 char filenameSpeed[100] = "/Users/CJChen/Desktop/CourseworksF2022/softRobotDocs/data/";
@@ -57,7 +58,7 @@ int main()
     srand((unsigned int)time(NULL));
     
     /* 0: random, 1: hillClimber, 2: evolutionAlgo */
-    selectRun = 2;
+    selectRun = 0;
     /* 0: cube, 1: 2 cubes, 2: walking cubes*/
     selectObject = 1;
 
@@ -233,6 +234,21 @@ void hillClimber()
     return;
 }
 
+void updateIndividualSpeed(
+    struct Material individualMaterial[sampleSize][MAXN],
+    int individualMaterialNum[sampleSize],
+    double individualSpeed[sampleSize])
+{
+    for(int i = 0; i < sampleSize; i ++)
+    {
+        initObject();
+        applyMaterialtoSprings(individualMaterial[i], individualMaterialNum[i]);
+        individualSpeed[i] = speed(points);
+    }
+    
+    return;
+}
+
 void evolutionAlgo()
 {
     double individualSpeed[sampleSize];
@@ -264,8 +280,13 @@ void evolutionAlgo()
                 bestMaterialIdx = sample;
             }
         }
-        
         bestSpeed[i] = maxSpeed;
+        
+        if((i + 1) % selectInterval == 0 && (i + 1) != evaluationTimes)
+        {
+            basicSelect(individualMaterial, individualMaterialNum, individualSpeed);
+            updateIndividualSpeed(individualMaterial, individualMaterialNum, individualSpeed);
+        }
     }
     
     applyMaterialtoSprings(individualMaterial[bestMaterialIdx], individualMaterialNum[bestMaterialIdx]);

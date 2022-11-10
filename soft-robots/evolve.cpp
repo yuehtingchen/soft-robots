@@ -16,11 +16,12 @@
 extern double T;
 extern const double TIME_STEP;
 extern const double MAX_TIME;
+extern const int sampleSize = 10;
 
 extern int numPoints;
 extern int numSprings;
 extern struct Point points[MAXN];
-extern struct Spring springs[MAXN];
+extern struct Spring springs[MAXN_SQR];
 
 const int K_HARD = 10000;
 const int K_SOFT = 1000;
@@ -33,6 +34,7 @@ void hardSupport(struct Material* material);
 void softSupport(struct Material* material);
 void randMuscle(struct Material* material);
 void getCenterOfMass(struct Point points[MAXN], double centerPos[2]);
+void copyMaterial(struct Material* materialSrc, struct Material* materialDest, int materialsNum);
 int random(int low, int high);
 
 double speed(struct Point points[MAXN])
@@ -173,8 +175,15 @@ void mutateMaterial(struct Material materials[MAXN], int* materialsNum)
     return;
 }
 
+
 /* overwrite from left index (inclusive) to right index (not inclusive) */
-void crossOver(struct Material materials1[MAXN], int* materialsNum1, struct Material materials2[MAXN], int* materialsNum2, struct Material offspring[MAXN], int* offspringNum)
+void crossOver(
+    struct Material materials1[MAXN],
+    int* materialsNum1,
+    struct Material materials2[MAXN],
+    int* materialsNum2,
+    struct Material offspring[MAXN],
+    int* offspringNum)
 {
     *offspringNum = *materialsNum2;
     for(int i = 0; i < *materialsNum2; i ++)
@@ -191,6 +200,55 @@ void crossOver(struct Material materials1[MAXN], int* materialsNum1, struct Mate
     for(int i = left; i < right; i ++)
     {
         offspring[i + offset2] = materials1[i + offset1];
+    }
+    
+    return;
+}
+
+void basicSelect(struct Material materials[sampleSize][MAXN], int materialsNum[sampleSize], double speed[sampleSize])
+{
+    double fitness[sampleSize];
+    int pressure = 0.5 * sampleSize;
+    double thresholdFitness = 0;
+    
+    for(int i = 0; i < sampleSize; i ++)
+    {
+        fitness[i] = speed[i];
+    }
+    
+    for(int i = 0; i < sampleSize; i ++)
+    {
+        int cnt = 0;
+        for(int j = 0; j < sampleSize; j ++)
+        {
+            if(fitness[j] > fitness[i]) cnt ++;
+        }
+        if(cnt == pressure)
+        {
+            thresholdFitness = fitness[i];
+        }
+    }
+    
+    struct Material oldMaterials[sampleSize][MAXN];
+    int oldMaterialsNum[sampleSize];
+    double oldSpeed[sampleSize];
+    for(int i = 0; i < sampleSize; i ++)
+    {
+        copyMaterial(materials[i], oldMaterials[i], materialsNum[i]);
+        oldMaterialsNum[i] = materialsNum[i];
+        oldSpeed[i] = speed[i];
+    }
+    
+    for(int i = 0; i < sampleSize; i ++)
+    {
+        if(speed[i] < thresholdFitness)
+        {
+            int momIdx = random(0, sampleSize - 2);
+            int dadIdx = random(momIdx + 1, sampleSize - 1);
+            crossOver(oldMaterials[momIdx], &oldMaterialsNum[momIdx],
+                      oldMaterials[dadIdx], &oldMaterialsNum[dadIdx],
+                      materials[i], &materialsNum[i]);
+        }
     }
     
     return;
@@ -288,6 +346,14 @@ void getCenterOfMass(struct Point points[MAXN], double centerPos[3])
     centerPos[2] = 0;
     
     return;
+}
+
+void copyMaterial(struct Material* materialSrc, struct Material* materialDest, int materialsNum)
+{
+    for(int i = 0; i < materialsNum; i ++)
+    {
+        materialDest[i] = materialSrc[i];
+    }
 }
 
 int random(int low, int high)

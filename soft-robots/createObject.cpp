@@ -12,7 +12,7 @@
 int numPoints = 0;
 int numSprings = 0;
 struct Point points[MAXN];
-struct Spring springs[MAXN];
+struct Spring springs[MAXN_SQR];
 
 const bool breathing = false;
 const double OMEGA = 3.1415926;

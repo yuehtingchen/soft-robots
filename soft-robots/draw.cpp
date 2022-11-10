@@ -45,7 +45,7 @@ vec3 lightPosition = vec3(-0.8, 0.5, 1.5);
 const GLfloat color_data[] = {1.0f, 0.3f, 0.3f};
 
 /* object */
-extern const double TIME_STEP;
+extern const double  TIME_STEP;
 extern const double MAX_TIME;
 extern double T;
 
@@ -55,7 +55,7 @@ int drawCount = 0;
 extern int numPoints;
 extern int numSprings;
 extern struct Point points[MAXN];
-extern struct Spring springs[MAXN];
+extern struct Spring springs[MAXN_SQR];
 
 const bool draw_surface = false;
 

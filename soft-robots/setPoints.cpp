@@ -31,7 +31,7 @@ const double muk = 0.8; // friction
 extern int numPoints;
 extern int numSprings;
 extern struct Point points[MAXN];
-extern struct Spring springs[MAXN];
+extern struct Spring springs[MAXN_SQR];
 
 double energy[1000000][2];
 int energy_len = 0;
