@@ -35,7 +35,7 @@ const int sampleSize = 10;
 const int selectInterval = 5;
 
 double bestSpeed[evaluationTimes];
-char folderName[100] = "/Users/CJChen/Desktop/CourseworksF2022/softRobotDocs/data/";
+char folderName[100] = "/home/yc3877/soft-robots-data/";
 char filenameSpeed[100];
 char filenameMaterial[100];
 
@@ -59,11 +59,11 @@ int main()
     srand((unsigned int)time(NULL));
     
     /* 0: random, 1: hillClimber, 2: evolutionAlgo */
-    selectRun = 0;
+    selectRun = 2;
     /* 0: cube, 1: 2 cubes, 2: walking cubes*/
     selectObject = 2;
     
-    strcat(folderName, "walkingCubes/");
+    strcat(folderName, "walking-cubes/");
 
     auto start = chrono::high_resolution_clock::now();
     for(int i = 0; i < testNum; i ++)

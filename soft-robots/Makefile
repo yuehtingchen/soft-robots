@@ -1,6 +1,6 @@
 CXX = g++
-CXXFLAGS = -Wall -g -std=c++11
-LIBS = -pthread -lm
+CXXFLAGS = -Wall -g -std=c++11 -fopenmp
+LIBS = -pthread -lm -fopenmp
 
 main: main.o evolve.o setPoints.o createObject.o
 	$(CXX) main.o evolve.o setPoints.o createObject.o $(LIBS) -o main
