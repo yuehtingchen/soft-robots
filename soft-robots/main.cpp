@@ -30,7 +30,7 @@ extern struct Point points[MAXN];
 extern struct Spring springs[MAXN];
 
 const int testNum = 5;
-const int evaluationTimes = 10;
+const int evaluationTimes = 1;
 const int sampleSize = 10;
 const int selectInterval = 5;
 
@@ -54,16 +54,22 @@ void writeMaterial(FILE* file, struct Material materials[MAXN], int materialsNum
 int readMaterial(char filename[100], struct Material materials[MAXN]);
 void printMaterials(struct Material materials[MAXN], int materialsNum);
 
-int main()
+int main(int argv, char** argc)
 {
     srand((unsigned int)time(NULL));
+
+    if(argv != 4)
+    {
+	printf("%s <method: 0-random 1-hillclimber 2-evolutionalgo> <object: 0-cube 1-twocubes 2-walking-cubes> <foldername>\n", argc[0]);
+	exit(1);
+    }
     
     /* 0: random, 1: hillClimber, 2: evolutionAlgo */
-    selectRun = 2;
+    selectRun = atoi(argc[1]);
     /* 0: cube, 1: 2 cubes, 2: walking cubes*/
-    selectObject = 2;
+    selectObject = atoi(argc[2]);
     
-    strcat(folderName, "walking-cubes/");
+    strcat(folderName, argc[3]);
 
     auto start = chrono::high_resolution_clock::now();
     for(int i = 0; i < testNum; i ++)
