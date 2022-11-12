@@ -111,7 +111,6 @@ void randInitMaterial(struct Material materials[MAXN], int* materialsNum)
     for(int i = 0; i < *materialsNum; i ++)
     {
         int selectLocation = random(numPoints / *materialsNum * i, numPoints / *materialsNum * (i + 1));
-        
         randMaterial(&materials[i], selectLocation);
     }
 }
@@ -329,7 +328,7 @@ void randMuscle(struct Material* material)
 {
     material->muscle = true;
     material->b = random(3, 5) * 0.1;
-    material->omega = PI;
+    material->omega = random(3, 5);
     material->k = 1000;
     
     /* expand */

@@ -120,36 +120,38 @@ int main(int argv, char** argc)
         }
         writeSpeed();
         
-        break;
+//        break;
     }
 
     if(pid > 0)
     {
-        int status;
-        int tmpTestNum = testNum;
-        while (tmpTestNum --)
-        {
-            while(wait(&status) > 0);
-            printf("%d\n", status);
-        }
+//        int status;
+//        int tmpTestNum = testNum;
+//        while (tmpTestNum --)
+//        {
+//            while(wait(&status) > 0);
+//            printf("%d\n", status);
+//        }
         auto stop = chrono::high_resolution_clock::now();
         auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
         cout << "Time taken by function: "
              << duration.count() / 1000000 << " seconds" << endl;
     }
-
     
     /* draw best robot */
     /*
     initObject();
     strcat(filenameMaterial, folderName);
-    strcat(filenameMaterial, "EA/material_1.txt");
+    strcat(filenameMaterial, "EA_100/material_4.txt");
     struct Material materials[MAXN];
     int materialsNum = 0;
     materialsNum = readMaterial(filenameMaterial, materials);
+    printMaterials(materials, materialsNum);
     applyMaterialtoSprings(materials, materialsNum);
+    
     draw();
     */
+    
     
     return 0;
 }
@@ -394,6 +396,10 @@ void initObject()
     else if(selectObject == 2)
     {
         initializeWalkingCubes();
+    }
+    else if(selectObject == 3)
+    {
+        initializeInsect();
     }
     else
     {

@@ -24,7 +24,7 @@ extern double T;
 const double GRAVITY[3] = {0, 0, -9.81};
 const int kc = 10000; // restoration force
 const bool damping = true;
-const double DAMPING_CONST = 0.99999;
+const double DAMPING_CONST = 0.9997;
 const double mu = 1.0; // friction
 const double muk = 0.8; // friction
 
