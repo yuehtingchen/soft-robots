@@ -125,7 +125,7 @@ void calcForce()
 
 void updatePointsPos()
 {
-    #pragma omp parallel for
+    #pragma omp parallel for num_threads(8)
     for(int i = 0; i < numPoints; i ++)
     {
         for(int j = 0; j < 3; j ++)
@@ -143,7 +143,7 @@ void updatePointsPos()
 
 void resetPointForce()
 {
-    #pragma omp parallel for
+    #pragma omp parallel for num_threads(8)
     for(int i = 0; i < numPoints; i ++)
     {
         points[i].force[0] = 0;
@@ -156,7 +156,7 @@ void resetPointForce()
 
 void calcSpringForce()
 {
-    #pragma omp parallel for
+    #pragma omp parallel for num_threads(8)
     for(int i = 0; i < numSprings; i ++)
     {
         struct Point *p1 = springs[i].p1;
@@ -191,7 +191,7 @@ void calcSpringForce()
 
 void calcGravitationalForce()
 {
-    #pragma omp parallel for
+    #pragma omp parallel for num_threads(8)
     for(int i = 0; i < numPoints; i ++)
     {
         for(int j = 0; j < 3; j ++)
@@ -205,7 +205,7 @@ void calcGravitationalForce()
 
 void calcFriction()
 {
-    #pragma omp parallel for
+    #pragma omp parallel for num_threads(8)
     for(int i = 0; i < numPoints; i ++)
     {
         if(points[i].pos[2] > 0 || points[i].force[2] > 0) continue;
@@ -236,7 +236,7 @@ void calcFriction()
 
 void calcRestorationForce()
 {
-    #pragma omp parallel for
+    #pragma omp parallel for num_threads(8)
     for(int i = 0; i < numPoints; i ++)
     {
         if(points[i].pos[2] >= 0) continue;

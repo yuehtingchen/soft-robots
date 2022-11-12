@@ -32,7 +32,7 @@ extern int numSprings;
 extern struct Point points[MAXN];
 extern struct Spring springs[MAXN];
 
-const int testNum = 4;
+const int testNum = 5;
 const int evaluationTimes = 100;
 const int sampleSize = 10;
 const int selectInterval = 5;
@@ -62,7 +62,7 @@ int main(int argv, char** argc)
 {
     if(argv != 4)
     {
-	printf("%s <method: 0-random 1-hillclimber 2-evolutionalgo> <object: 0-cube 1-twocubes 2-walking-cubes> <foldername>\n", argc[0]);
+	printf("%s <method: 0-random 1-hillclimber 2-evolutionalgo> <object: 0-cube 1-twocubes 2-walking-cubes 3-insect> <foldername>\n", argc[0]);
 	exit(1);
     }
     
@@ -77,8 +77,8 @@ int main(int argv, char** argc)
     auto start = chrono::high_resolution_clock::now();
     for(int i = 0; i < testNum; i ++)
     {
-        pid = fork();
-        if(pid != 0) continue;
+        // pid = fork();
+        // if(pid != 0) continue;
         srand((unsigned int)time(NULL)^(i));
         
         filenameSpeed[0] = 0;
@@ -120,18 +120,20 @@ int main(int argv, char** argc)
         }
         writeSpeed();
         
-//        break;
+        // break;
     }
 
     if(pid > 0)
     {
-//        int status;
-//        int tmpTestNum = testNum;
-//        while (tmpTestNum --)
-//        {
-//            while(wait(&status) > 0);
-//            printf("%d\n", status);
-//        }
+	/*
+        int status;
+        int tmpTestNum = testNum;
+        while (tmpTestNum --)
+        {
+            while(wait(&status) > 0);
+            printf("%d\n", status);
+        }
+	*/
         auto stop = chrono::high_resolution_clock::now();
         auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
         cout << "Time taken by function: "
