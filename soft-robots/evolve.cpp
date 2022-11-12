@@ -37,22 +37,40 @@ void getCenterOfMass(struct Point points[MAXN], double centerPos[3]);
 void copyMaterial(struct Material* materialSrc, struct Material* materialDest, int materialsNum);
 int random(int low, int high);
 
-double speed(struct Point points[MAXN])
+void speed(struct Point points[MAXN], double& speed, double& speedPath)
 {
     double initXY[3];
     getCenterOfMass(points, initXY);
+    
+    double pathLen = 0;
+    double prevXY[3] = {initXY[0], initXY[1], initXY[2]};
     
     T = 0;
     while(T <= MAX_TIME)
     {
         updatePoints();
         T += TIME_STEP;
+        
+        double curXY[3];
+        getCenterOfMass(points, curXY);
+        pathLen += calcDist(prevXY, curXY);
+        prevXY[0] = curXY[0];
+        prevXY[1] = curXY[1];
+        prevXY[2] = curXY[2];
     }
     
     double finalXY[3];
     getCenterOfMass(points, finalXY);
     
-    return calcDist(initXY, finalXY) / (double) MAX_TIME;
+    speedPath = pathLen / (double) MAX_TIME;
+    speed = calcDist(initXY, finalXY) / (double) MAX_TIME;
+    
+    return;
+}
+
+double speedFitness(double speed, double speedPath)
+{
+    return speed * 2 - speedPath;
 }
 
 void applyMaterialtoSprings(struct Material materials[MAXN], int materialsNum)

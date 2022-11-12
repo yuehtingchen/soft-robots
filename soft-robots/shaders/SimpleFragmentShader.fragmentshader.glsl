@@ -19,7 +19,7 @@ void main()
     vec3 lightColor = vec3(1.0f, 1.0f, 1.0f);
     float lightPower = 1.0f;
     
-    vec3 ambientColor = vec3(0.5,0.5,0.5) * fragmentColor;
+    vec3 ambientColor = vec3(0.8,0.8,0.8) * fragmentColor;
     
     /* distance of object to light source */
     float dist = length(lightPosition_worldspace - vertexPosition_worldspace);
