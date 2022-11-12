@@ -6,6 +6,7 @@
 //
 
 #include <math.h>
+#include <stdio.h>
 #include "createObject.hpp"
 #include "utility.h"
 
@@ -19,12 +20,17 @@ const double OMEGA = 3.1415926;
 const double b = 0.05;
 
 double calcDist(double p1[3], double p2[3]);
+void initializeAllPoints();
 void initializePointsCube();
 void initializePointsTetrahedral();
+void initializePointsTetrahedral(int pIdx, double leftX, double leftY, double leftZ, double yDir, double zDir, double sideLen);
+int initializeSprings(int pIdx, int l, int r);
 void initializeSprings();
 int initializePointsTwoCubes();
 void initializePointsWalkingCube();
+void initializeInsect();
 void initializeSpringsForEachCube();
+void initializeSpringsForEachCube(int pIdx, struct Point* points[], int numPoints);
 
 void initializeCube()
 {
@@ -52,6 +58,70 @@ void initializeWalkingCubes()
     numPoints = 115;
     initializePointsWalkingCube();
     initializeSpringsForEachCube();
+}
+
+void initializeInsect()
+{
+    struct Point* middle[20];
+    int midN = 0;
+    int legsNum = 2;
+    int p = 0;
+    numSprings = 0;
+    
+    /* legs */
+    for(int i = 0; i < legsNum; i ++)
+    {
+        initializePointsTetrahedral(p, i, 0.0, 2.0 / sqrt(3), -1.0, -1.0, 1.0);
+        middle[midN++] = &points[p];
+        numSprings += initializeSprings(numSprings, p, p + 4);
+        p += 3;
+    }
+    middle[midN++] = &points[p];
+    p ++;
+    
+    for(int i = 0; i < legsNum; i ++)
+    {
+        initializePointsTetrahedral(p, i, 1, 2.0 / sqrt(3), 1.0, -1.0, 1.0);
+        middle[midN++] = &points[p];
+        numSprings += initializeSprings(numSprings, p, p + 4);
+        p += 3;
+    }
+    middle[midN++] = &points[p];
+    p ++;
+    
+    /* body */
+    for(int y = 0; y <= 1; y ++)
+    {
+        for(int i = 0; i < legsNum + 1; i ++)
+        {
+            points[p].pos[0] = i;
+            points[p].pos[1] = y;
+            points[p].pos[2] = 2.0 / sqrt(3) + 0.5;
+            middle[midN++] = &points[p];
+            p ++;
+        }
+    }
+
+    initializeSpringsForEachCube(numSprings, middle, midN);
+    
+    numPoints = p;
+    initializeAllPoints();
+    
+    return;
+}
+
+void initializeAllPoints()
+{
+    for(int i = 0; i < numPoints; i ++)
+    {
+        points[i].mass = 0.1;
+        for(int j = 0; j < 3; j ++)
+        {
+            points[i].velocity[j] = 0;
+            points[i].accel[j] = 0;
+            points[i].force[j] = 0;
+        }
+    }
 }
 
 void initializePointsCube()
@@ -90,33 +160,65 @@ void initializePointsCube()
 void initializePointsTetrahedral()
 {
     numPoints = 4;
-    for(int i = 0; i < numPoints; i ++)
+    initializePointsTetrahedral(0, 0, 0, 0, 1, 1, 1);
+}
+
+void initializePointsTetrahedral(int pIdx, double leftX, double leftY, double leftZ, double yDir, double zDir, double sideLen)
+{
+    for(int i = 0; i < 4; i ++)
     {
-        points[i].mass = 0.1;
+        points[pIdx + i].mass = 0.1;
         for(int j = 0; j < 3; j ++)
         {
-            points[i].velocity[j] = 0;
-            points[i].accel[j] = 0;
-            points[i].force[j] = 0;
+            points[pIdx + i].velocity[j] = 0;
+            points[pIdx + i].accel[j] = 0;
+            points[pIdx + i].force[j] = 0;
         }
     }
     
     double h = sqrt(3) * 0.5;
     double hmid = h / 3;
-    double x[4] = {0, 0.5, 1, 0.5};
-    double y[4] = {0, h, 0, hmid};
-    double z[4] = {0, 0, 0, h};
+    double tetrahedralH = 2.0 / sqrt(3);
+    double x[4] = {0, 0.5, 0.5, 1};
+    double y[4] = {0, h, hmid, 0};
+    double z[4] = {0, 0, tetrahedralH, 0};
     
-    double drop_height = 0.2;
+    double drop_height = 0;
     
-    int p = 0;
+    int p = pIdx;
     for(int i = 0; i < 4; i ++)
     {
-        points[p].pos[0] = x[i] * 0.1;
-        points[p].pos[1] = y[i] * 0.1;
-        points[p].pos[2] = z[i] * 0.1 + drop_height;
+        points[p].pos[0] = (leftX + x[i]) * sideLen;
+        points[p].pos[1] = (leftY + y[i] * yDir) * sideLen;
+        points[p].pos[2] = (leftZ + z[i] * zDir)* sideLen + drop_height;
         p ++;
     }
+}
+
+int initializeSprings(int pIdx, int l, int r)
+{
+    int p = pIdx;
+    for(int i = l; i < r - 1; i ++)
+    {
+        for(int j = i + 1; j < r; j ++)
+        {
+            springs[p].muscle = false;
+            springs[p].p1 = &points[i];
+            springs[p].p2 = &points[j];
+            springs[p].len = calcDist(points[i].pos, points[j].pos);
+            springs[p].k = 10000;
+            
+            if(breathing)
+            {
+                springs[p].muscle = true;
+                springs[p].b = b;
+                springs[p].omega = OMEGA;
+                springs[p].c = -0.0002;
+            }
+            p ++;
+        }
+    }
+    return p - pIdx;
 }
 
 void initializeSprings()
@@ -249,6 +351,32 @@ void initializePointsWalkingCube()
             points[i].force[j] = 0;
         }
     }
+    
+    return;
+}
+
+void initializeSpringsForEachCube(int pIdx, struct Point* points[], int numPoints)
+{
+    int p = pIdx;
+    
+    for(int i = 0; i < numPoints - 1; i ++)
+    {
+        for(int j = i + 1; j < numPoints; j ++)
+        {
+            if(calcDist(points[i]->pos, points[j]->pos) > sqrt(3) + 0.01)
+            {
+                continue;
+            }
+            
+            springs[p].p1 = points[i];
+            springs[p].p2 = points[j];
+            springs[p].len = calcDist(points[i]->pos, points[j]->pos);
+            springs[p].k = 10000;
+            p ++;
+        }
+    }
+    
+    numSprings = p;
     
     return;
 }

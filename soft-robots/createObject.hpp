@@ -12,6 +12,7 @@ void initializeCube();
 void initializeTetrahedral();
 void initializeTwoCubes();
 void initializeWalkingCubes();
+void initializeInsect();
 double calcDist(double p1[3], double p2[3]);
 
 #endif /* createObject_hpp */
