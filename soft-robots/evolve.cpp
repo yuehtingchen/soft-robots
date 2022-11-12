@@ -119,8 +119,8 @@ void randInitMaterial(struct Material materials[MAXN], int* materialsNum)
  * Possible mutations include
  * 1. replacing one type of material to another
  * 2. swapping location of two materials
- * 3. remove material
- * 4. add material
+ * 3. add material
+ * 4. remove material
  */
 void mutateMaterial(struct Material materials[MAXN], int* materialsNum)
 {
@@ -132,6 +132,11 @@ void mutateMaterial(struct Material materials[MAXN], int* materialsNum)
     }
     
     int selectMutate = random(1, 4);
+    if(selectMutate == 3 && *materialsNum <= 2)
+    {
+        selectMutate = random(1, 3);
+    }
+    
     if(selectMutate == 1)
     {
         int selectMaterialIdx = random(0, *materialsNum - 1);
@@ -148,6 +153,29 @@ void mutateMaterial(struct Material materials[MAXN], int* materialsNum)
     }
     else if(selectMutate == 3)
     {
+      /* check if two material have the same location */
+      int selectLocation = 0;
+      bool invalid = true;
+      
+      while(invalid)
+      {
+          selectLocation = random(0, numPoints - 1);
+          invalid = false;
+          
+          for(int i = 0; i < *materialsNum; i ++)
+          {
+              if(materials[i].pIdx == selectLocation)
+              {
+                  invalid = true;
+              }
+          }
+      }
+      
+      randMaterial(&newMaterials[*materialsNum], selectLocation);
+      newMaterialsNum ++;
+    }
+    else
+    {
         int selectMaterialIdx = random(0, *materialsNum - 1);
         
         int p = 0;
@@ -158,29 +186,6 @@ void mutateMaterial(struct Material materials[MAXN], int* materialsNum)
         }
         
         newMaterialsNum = p;
-    }
-    else
-    {
-        /* check if two material have the same location */
-        int selectLocation = 0;
-        bool invalid = true;
-        
-        while(invalid)
-        {
-            selectLocation = random(0, numPoints - 1);
-            invalid = false;
-            
-            for(int i = 0; i < *materialsNum; i ++)
-            {
-                if(materials[i].pIdx == selectLocation)
-                {
-                    invalid = true;
-                }
-            }
-        }
-        
-        randMaterial(&newMaterials[*materialsNum], selectLocation);
-        newMaterialsNum ++;
     }
     
     for(int i = 0; i < *materialsNum + 1; i ++)
@@ -209,7 +214,7 @@ void crossOver(
     }
     
     int minMaterialsNum = *materialsNum1 < *materialsNum2 ? *materialsNum1 : *materialsNum2;
-    int left = random(1, minMaterialsNum - 2);
+    int left = random(0, minMaterialsNum - 2);
     int right = random(left + 1, minMaterialsNum - 1);
     int offset1 = random(0, *materialsNum1 - minMaterialsNum);
     int offset2 = random(0, *materialsNum2 - minMaterialsNum);
