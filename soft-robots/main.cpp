@@ -14,6 +14,7 @@
 #include <math.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <sys/wait.h>
 using namespace std;
 
 #include "utility.h"
@@ -31,12 +32,8 @@ extern int numSprings;
 extern struct Point points[MAXN];
 extern struct Spring springs[MAXN];
 
-const int testNum = 5;
-<<<<<<< HEAD
-const int evaluationTimes = 1;
-=======
+const int testNum = 4;
 const int evaluationTimes = 100;
->>>>>>> main
 const int sampleSize = 10;
 const int selectInterval = 5;
 
@@ -136,7 +133,7 @@ int main(int argv, char** argc)
             printf("%d\n", status);
         }
         auto stop = chrono::high_resolution_clock::now();
-        auto duration = duration_cast<chrono::microseconds>(stop - start);
+        auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
         cout << "Time taken by function: "
              << duration.count() / 1000000 << " seconds" << endl;
     }
@@ -152,12 +149,8 @@ int main(int argv, char** argc)
     materialsNum = readMaterial(filenameMaterial, materials);
     applyMaterialtoSprings(materials, materialsNum);
     draw();
-<<<<<<< HEAD
-    */ 
-=======
     */
     
->>>>>>> main
     return 0;
 }
 
