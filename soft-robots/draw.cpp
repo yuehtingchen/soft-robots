@@ -43,20 +43,21 @@ const int windowHeight = 1080;
 /* video capture */
 /* start ffmpeg telling it to expect raw rgba 720p-60hz frames
  -i - tells it to read frames from stdin */
+bool writeVideo = false;
 const char* cmd = "/opt/homebrew/bin/ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s 3840x2160 -i - "
                   "-threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf vflip "
-                  "/Users/CJChen/Desktop/CourseworksF2022/softRobotDocs/videos/two-cubes/random.mp4";
+                  "/Users/CJChen/Desktop/CourseworksF2022/softRobotDocs/videos/walking-cubes/output.mp4";
 
 /* open pipe to ffmpeg's stdin in binary write mode */
 int frameWidth = windowWidth * 2;
 int frameHeigth = windowHeight * 2;
-FILE* ffmpeg = popen(cmd, "w");
-//FILE* ffmpeg = NULL;
+//FILE* ffmpeg = popen(cmd, "w");
+FILE* ffmpeg = NULL;
 int* buffer = new int[frameWidth * frameHeigth];
 
 /* lighting */
 vec3 initLightPosition = vec3(-1, 0, 1.5);
-vec3 initCameraPosition = vec3(-2, 15, 4);
+vec3 initCameraPosition = vec3(-10, 0, 4);
 
 /* color */
 const GLfloat color_data[] = {1.0f, 0.3f, 0.3f};
@@ -74,7 +75,7 @@ extern int numSprings;
 extern struct Point points[MAXN];
 extern struct Spring springs[MAXN_SQR];
 
-const bool draw_surface = true;
+const bool draw_surface = false;
 
 vector< vec3 > box_points_buffer_data;
 vector< vec3 > box_vertex_buffer_data;
@@ -152,7 +153,7 @@ int draw( void )
             T += TIME_STEP;
         }
         drawCount = 0;
-        
+
         updateObject();
         
         /* Clear the screen */
@@ -254,8 +255,11 @@ int draw( void )
         glfwSwapBuffers(window);
         glfwPollEvents();
         
-        glReadPixels(0, 0, frameWidth, frameHeigth, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-        fwrite(buffer, sizeof(int) * frameWidth * frameHeigth, 1, ffmpeg);
+        if(writeVideo)
+        {
+            glReadPixels(0, 0, frameWidth, frameHeigth, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+            fwrite(buffer, sizeof(int) * frameWidth * frameHeigth, 1, ffmpeg);
+        }
 
     } /* Check if the ESC key was pressed or the window was closed */
     while( glfwGetKey(window, GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
@@ -365,7 +369,7 @@ vec3 materialColor(struct Spring spring)
     }
     else if(spring.k > 5000)
     {
-        return vec3(1.0f, 1.0f, 0.0f);
+        return vec3(0.5f, 0.8f, 0.0f);
     }
     else
     {
