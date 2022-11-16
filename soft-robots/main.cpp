@@ -23,7 +23,7 @@ using namespace std;
 #include "draw.hpp"
 
 extern const double TIME_STEP = 0.0001;
-extern const double MAX_TIME = 15.0;
+extern const double MAX_TIME = 10.0;
 double T = 0;
 
 extern int numPoints;
@@ -31,15 +31,17 @@ extern int numSprings;
 extern struct Point points[MAXN];
 extern struct Spring springs[MAXN];
 
-const int testNum = 5;
+const int testNum = 1;
 const int evaluationTimes = 100;
 const int sampleSize = 10;
 const int selectInterval = 5;
+bool toWriteDiversity = true;
 
 double bestSpeed[evaluationTimes];
 char folderName[100] = "/Users/CJChen/Desktop/CourseworksF2022/softRobotDocs/data/";
 char filenameSpeed[100];
 char filenameMaterial[100];
+char filenameDiversity[100];
 
 int selectRun = 0;
 int selectObject = 0;
@@ -53,6 +55,7 @@ void evolutionAlgo();
 void initObject();
 void writeSpeed();
 void testOpenFile();
+void writeDiversity(double diversity[evaluationTimes]);
 void writeMaterial(FILE* file, struct Material materials[MAXN], int materialsNum);
 int readMaterial(char filename[100], struct Material materials[MAXN]);
 void printMaterials(struct Material materials[MAXN], int materialsNum);
@@ -62,28 +65,31 @@ int main()
     /* 0: random, 1: hillClimber, 2: evolutionAlgo */
     selectRun = 2;
     /* 0: cube, 1: 2 cubes, 2: walking cubes, 3: insect*/
-    selectObject = 3;
+    selectObject = 2;
     
-    strcat(folderName, "insect/");
-    
+    strcat(folderName, "walking-cubes/");
     
     pid_t pid = 1;
     auto start = chrono::high_resolution_clock::now();
     for(int i = 0; i < testNum; i ++)
     {
-//        pid = fork();
-//        if(pid != 0) continue;
+        pid = fork();
+        if(pid != 0) continue;
         srand((unsigned int)time(NULL)^(i));
         
         filenameSpeed[0] = 0;
         filenameMaterial[0] = 0;
+        filenameDiversity[0] = 0;
         strcat(filenameSpeed, folderName);
         strcat(filenameMaterial, folderName);
+        strcat(filenameDiversity, folderName);
 
         char tmpfilenameSpeed[100];
         char tmpfilenameMaterial[100];
+        char tmpfilenameDiversity[100];
         snprintf(tmpfilenameSpeed, 12, "speed_%d.csv", i + 1);
         snprintf(tmpfilenameMaterial, 15, "material_%d.txt", i + 1);
+        snprintf(tmpfilenameDiversity, 16, "diversity_%d.txt", i + 1);
 
         if(selectRun == 0)
         {
@@ -110,22 +116,25 @@ int main()
 
             strcat(filenameMaterial, "EA/");
             strcat(filenameMaterial, tmpfilenameMaterial);
+            
+            strcat(filenameDiversity, "EA/");
+            strcat(filenameDiversity, tmpfilenameDiversity);
             evolutionAlgo();
         }
         writeSpeed();
         
-//        break;
+        break;
     }
     
     if(pid > 0)
     {
-//        int status;
-//        int tmpTestNum = testNum;
-//        while (tmpTestNum --)
-//        {
-//            while(wait(&status) > 0);
-//            printf("%d\n", status);
-//        }
+        int status;
+        int tmpTestNum = testNum;
+        while (tmpTestNum --)
+        {
+            while(wait(&status) > 0);
+            printf("%d\n", status);
+        }
         auto stop = chrono::high_resolution_clock::now();
         auto duration = duration_cast<chrono::microseconds>(stop - start);
         cout << "Time taken by function: "
@@ -136,16 +145,14 @@ int main()
     /*
     initObject();
     strcat(filenameMaterial, folderName);
-    strcat(filenameMaterial, "EA_100/material_4.txt");
+    strcat(filenameMaterial, "EA_300/material_3.txt");
     struct Material materials[MAXN];
     int materialsNum = 0;
     materialsNum = readMaterial(filenameMaterial, materials);
-    printMaterials(materials, materialsNum);
     applyMaterialtoSprings(materials, materialsNum);
-    
+    printSprings();
     draw();
     */
-    
     
     return 0;
 }
@@ -315,10 +322,12 @@ void updateIndividualSpeed(
 void evolutionAlgo()
 {
     testOpenFile();
+    double diversity[evaluationTimes];
     double individualSpeed[sampleSize];
     double individualSpeedPath[sampleSize];
     int individualMaterialNum[sampleSize];
     struct Material individualMaterial[sampleSize][MAXN];
+    
 
     for(int sample = 0; sample < sampleSize; sample ++)
     {
@@ -351,13 +360,22 @@ void evolutionAlgo()
                 maxSpeed = individualSpeed[sample];
                 bestMaterialIdx = sample;
             }
+            
+            printf("%lf, ", individualSpeed[sample]);
         }
+        printf("\n");
         bestSpeed[i] = maxSpeed;
         
         if((i + 1) % selectInterval == 0 && (i + 1) != evaluationTimes)
         {
             basicSelect(individualMaterial, individualMaterialNum, individualSpeed);
             updateIndividualSpeed(individualMaterial, individualMaterialNum, individualSpeed, individualSpeedPath);
+        }
+        
+        if(toWriteDiversity)
+        {
+            initObject();
+            diversity[i] = getDiversity(individualMaterial, individualMaterialNum);
         }
     }
     
@@ -372,6 +390,8 @@ void evolutionAlgo()
     }
     writeMaterial(fileMaterial, individualMaterial[bestMaterialIdx], individualMaterialNum[bestMaterialIdx]);
     fclose(fileMaterial);
+    
+    writeDiversity(diversity);
     
     return;
 }
@@ -440,7 +460,7 @@ void writeSpeed()
     return;
 }
 
-void writeMaterial(FILE* file, struct Material materials[MAXN], int materialsNum)
+void  writeMaterial(FILE* file, struct Material materials[MAXN], int materialsNum)
 {
     /* int Idx;
      * double len;
@@ -464,6 +484,26 @@ void writeMaterial(FILE* file, struct Material materials[MAXN], int materialsNum
     }
     fprintf(file, "\n");
     
+    return;
+}
+
+void writeDiversity(double diversity[evaluationTimes])
+{
+    if(!toWriteDiversity) return;
+    
+    FILE* fileDiverse = fopen(filenameDiversity, "w+");
+    if(fileDiverse == NULL)
+    {
+        perror(filenameSpeed);
+        exit(1);
+    }
+    
+    for(int i = 0; i < evaluationTimes; i ++)
+    {
+        fprintf(fileDiverse, "%lf\n", diversity[i]);
+    }
+    
+    fclose(fileDiverse);
     return;
 }
 
@@ -493,25 +533,4 @@ int readMaterial(char filename[100], struct Material materials[MAXN])
     
     fclose(file);
     return materialsNum;
-}
-
-void printMaterials(struct Material materials[MAXN], int materialsNum)
-{
-    for(int i = 0; i < materialsNum; i ++)
-    {
-        int idx = materials[i].pIdx;
-        printf("location=(%f %f %f)\n", points[idx].pos[0], points[idx].pos[1], points[idx].pos[2]);
-        printf("muscle = %d\n", materials[i].muscle);
-        if(materials[i].muscle)
-        {
-            printf("b = %f\n", materials[i].b);
-        }
-        else
-        {
-            printf("k = %f\n", materials[i].k);
-        }
-    }
-    printf("\n");
-    
-    return;
 }
