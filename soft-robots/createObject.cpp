@@ -73,6 +73,7 @@ void initializeInsect()
     {
         initializePointsTetrahedral(p, i, 0.0, 2.0 / sqrt(3), -1.0, -1.0, 1.0);
         middle[midN++] = &points[p];
+        middle[midN++] = &points[p + 1];
         numSprings += initializeSprings(numSprings, p, p + 4);
         p += 3;
     }
@@ -83,6 +84,7 @@ void initializeInsect()
     {
         initializePointsTetrahedral(p, i, 1, 2.0 / sqrt(3), 1.0, -1.0, 1.0);
         middle[midN++] = &points[p];
+        middle[midN++] = &points[p + 1];
         numSprings += initializeSprings(numSprings, p, p + 4);
         p += 3;
     }
@@ -90,16 +92,14 @@ void initializeInsect()
     p ++;
     
     /* body */
-    for(int y = 0; y <= 1; y ++)
+    int curMidN = midN;
+    for(int i = 0; i < curMidN; i ++)
     {
-        for(int i = 0; i < legsNum + 1; i ++)
-        {
-            points[p].pos[0] = i;
-            points[p].pos[1] = y;
-            points[p].pos[2] = 2.0 / sqrt(3) + 0.5;
-            middle[midN++] = &points[p];
-            p ++;
-        }
+        points[p].pos[0] = middle[i]->pos[0];
+        points[p].pos[1] = middle[i]->pos[1];
+        points[p].pos[2] = middle[i]->pos[2] + 0.5;
+        middle[midN++] = &points[p];
+        p ++;
     }
 
     initializeSpringsForEachCube(numSprings, middle, midN);
@@ -282,12 +282,12 @@ int initializePointsTwoCubes()
 int initializeFeet(struct Point* points_start, int z)
 {
     double x[4] = {0, 1, 3, 4};
-    double y[5] = {0, 1, 2, 3, 4};
+    double y[5] = {0, 1, 2, 3};
     int p = 0;
     
     for(int i = 0; i < 4; i ++)
     {
-        for(int j = 0; j < 5; j ++)
+        for(int j = 0; j < 4; j ++)
         {
             
             points_start[p].pos[0] = x[i];
@@ -304,12 +304,12 @@ int initializeFeet(struct Point* points_start, int z)
 int initializeBody(struct Point* points_start, int z)
 {
     double x[5] = {0, 1, 2, 3, 4};
-    double y[5] = {0, 1, 2, 3, 4};
+    double y[5] = {0, 1, 2, 3};
     int p = 0;
     
     for(int i = 0; i < 5; i ++)
     {
-        for(int j = 0; j < 5; j ++)
+        for(int j = 0; j < 4; j ++)
         {
             
             points_start[p].pos[0] = x[i];
@@ -325,20 +325,22 @@ int initializeBody(struct Point* points_start, int z)
 
 void initializePointsWalkingCube()
 {
-    numPoints = 115;
+    numPoints = 0;
     int p = 0;
+    double dropHeight = 1.5;
     
-    for(int z = 0; z <= 4; z ++)
+    for(int z = 0; z <= 3; z ++)
     {
         if(z == 0 || z == 1)
         {
-            p += initializeFeet(&points[p], z);
+            p += initializeFeet(&points[p], z + dropHeight);
         }
         else
         {
-            p += initializeBody(&points[p], z);
+            p += initializeBody(&points[p], z + dropHeight);
         }
     }
+    numPoints = p;
     
     for(int i = 0; i < numPoints; i ++)
     {
