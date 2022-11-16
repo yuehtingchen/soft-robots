@@ -106,11 +106,11 @@ void applyMaterialtoSprings(struct Material materials[MAXN], int materialsNum)
  */
 void randInitMaterial(struct Material materials[MAXN], int* materialsNum)
 {
-    *materialsNum = 4;
+    *materialsNum = random(4, 8);
     
     for(int i = 0; i < *materialsNum; i ++)
     {
-        int selectLocation = random(numPoints / *materialsNum * i, numPoints / *materialsNum * (i + 1));
+        int selectLocation = random(numPoints / *materialsNum * i, numPoints / *materialsNum * (i + 1) - 1);
         randMaterial(&materials[i], selectLocation);
     }
 }
@@ -370,6 +370,71 @@ void getCenterOfMass(struct Point points[MAXN], double centerPos[3])
     return;
 }
 
+double compareSprings(struct Spring a, struct Spring b)
+{
+    if(a.muscle != b.muscle)
+    {
+        return 1;
+    }
+    if(a.muscle)
+    {
+        if(a.len != b.len || a.b != b.b || a.omega != b.omega || a.c != b.c)
+        {
+            return 1;
+        }
+        return 0;
+    }
+    else
+    {
+        if(a.k != b.k || a.len != b.len)
+        {
+            return 1;
+        }
+        return 0;
+    }
+}
+
+double compareObjects(struct Spring springs1[MAXN_SQR], struct Spring springs2[MAXN_SQR], int numSprings)
+{
+    double diff = 0;
+    for(int q = 0; q < numSprings; q ++)
+    {
+        diff += compareSprings(springs1[q], springs2[q]);
+    }
+    
+    return diff / numSprings;
+}
+
+double getDiversity(struct Material materials[sampleSize][MAXN], int materialsNum[sampleSize])
+{
+    double diff = 0;
+    struct Spring tmpSpring1[MAXN_SQR];
+    struct Spring tmpSpring2[MAXN_SQR];
+    for(int i = 0; i < sampleSize; i ++)
+    {
+        applyMaterialtoSprings(materials[i], materialsNum[i]);
+        for(int j = 0; j < numSprings; j ++)
+        {
+            tmpSpring1[j] = springs[j];
+        }
+        
+        for(int j = i + 1; j < sampleSize; j ++)
+        {
+            applyMaterialtoSprings(materials[j], materialsNum[j]);
+            for(int k = 0; k < numSprings; k ++)
+            {
+                tmpSpring2[k] = springs[k];
+            }
+            
+            diff += compareObjects(tmpSpring1, tmpSpring2, numSprings);
+        }
+    }
+    
+    int pairs = sampleSize * (sampleSize - 1) / 2;
+    
+    return diff / pairs;
+}
+
 void copyMaterial(struct Material* materialSrc, struct Material* materialDest, int materialsNum)
 {
     for(int i = 0; i < materialsNum; i ++)
@@ -381,5 +446,26 @@ void copyMaterial(struct Material* materialSrc, struct Material* materialDest, i
 int random(int low, int high)
 {
     return rand() % (high + 1 - low) + low;
+}
+
+void printMaterials(struct Material materials[MAXN], int materialsNum)
+{
+    for(int i = 0; i < materialsNum; i ++)
+    {
+        int idx = materials[i].pIdx;
+        printf("location=(%f %f %f)\n", points[idx].pos[0], points[idx].pos[1], points[idx].pos[2]);
+        printf("muscle = %d\n", materials[i].muscle);
+        if(materials[i].muscle)
+        {
+            printf("b = %f\n", materials[i].b);
+        }
+        else
+        {
+            printf("k = %f\n", materials[i].k);
+        }
+    }
+    printf("\n");
+    
+    return;
 }
 

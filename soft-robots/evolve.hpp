@@ -17,5 +17,7 @@ void basicSelect(struct Material materials[][MAXN], int* materialsNum, double* s
 void speed(struct Point points[MAXN], double& speed, double& speedPath);
 double speedFitness(double speed, double speedPath);
 void getCenterOfMass(struct Point points[MAXN], double centerPos[3]);
+double getDiversity(struct Material materials[][MAXN], int materialsNum[]);
+void printMaterials(struct Material materials[MAXN], int materialsNum);
 
 #endif /* evolve_hpp */
