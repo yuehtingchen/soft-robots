@@ -8,8 +8,11 @@
 #ifndef utility_h
 #define utility_h
 
-#define MAXN 100
-#define MAXN_SQR 1000
+#define MAXN 150
+#define MAXN_SQR 2000
+
+const int MAX_SIDE = 4;
+const int MAX_BLOCKS = MAX_SIDE * MAX_SIDE * MAX_SIDE;
 
 struct Point
 {

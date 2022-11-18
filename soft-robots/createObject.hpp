@@ -13,6 +13,7 @@ void initializeTetrahedral();
 void initializeTwoCubes();
 void initializeWalkingCubes();
 void initializeInsect();
+void initializeSpringsForEachCube(int pIdx, struct Point* points[], int numPoints);
 double calcDist(double p1[3], double p2[3]);
 
 #endif /* createObject_hpp */
