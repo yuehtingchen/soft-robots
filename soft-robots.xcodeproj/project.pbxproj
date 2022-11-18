@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F2098D832926DED100FDEB5A /* evolveBody.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F2098D812926DED100FDEB5A /* evolveBody.cpp */; };
 		F23361BC29195FFA00098043 /* createObject.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F23361BA29195FFA00098043 /* createObject.cpp */; };
 		F23361BF291982A700098043 /* evolve.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F23361BD291982A700098043 /* evolve.cpp */; };
 		F23361C22919E44300098043 /* draw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F23361C02919E44300098043 /* draw.cpp */; };
@@ -33,6 +34,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		F2098D812926DED100FDEB5A /* evolveBody.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = evolveBody.cpp; sourceTree = "<group>"; };
+		F2098D822926DED100FDEB5A /* evolveBody.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = evolveBody.hpp; sourceTree = "<group>"; };
 		F21AA3B3291042C800DF7ED4 /* FloorFragmentShader.fragmentshader.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = FloorFragmentShader.fragmentshader.glsl; sourceTree = "<group>"; };
 		F21AA3B4291042D200DF7ED4 /* FloorVertexShader.vertexshader.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = FloorVertexShader.vertexshader.glsl; sourceTree = "<group>"; };
 		F21AA3B52912E3B300DF7ED4 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -109,6 +112,8 @@
 				F23361BE291982A700098043 /* evolve.hpp */,
 				F23361C02919E44300098043 /* draw.cpp */,
 				F23361C12919E44300098043 /* draw.hpp */,
+				F2098D812926DED100FDEB5A /* evolveBody.cpp */,
+				F2098D822926DED100FDEB5A /* evolveBody.hpp */,
 			);
 			path = "soft-robots";
 			sourceTree = "<group>";
@@ -214,6 +219,7 @@
 				F23361BF291982A700098043 /* evolve.cpp in Sources */,
 				F2E9C8122904CFCE002263B6 /* controls.cpp in Sources */,
 				F23361C22919E44300098043 /* draw.cpp in Sources */,
+				F2098D832926DED100FDEB5A /* evolveBody.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

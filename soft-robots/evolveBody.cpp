@@ -20,7 +20,7 @@ extern int numSprings;
 extern struct Point points[MAXN];
 extern struct Spring springs[MAXN_SQR];
 
-const int generatePercent = 50;
+const int generatePercent = 60;
 const int DIR[6][3] = {
     {1, 0, 0},
     {-1, 0, 0},

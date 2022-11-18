@@ -81,10 +81,10 @@ void applyMaterialtoSprings(struct Material materials[MAXN], int materialsNum)
         struct Spring *spring = &springs[i];
         
         int materialIdx = 0;
-        double minDist = calcDist(spring->p1->pos, points[materials[0].pIdx].pos);
+        double minDist = calcDist(spring->p1->pos, materials[0].pos);
         for(int j = 1; j < materialsNum; j ++)
         {
-            double dist = calcDist(spring->p1->pos, points[materials[j].pIdx].pos);
+            double dist = calcDist(spring->p1->pos, materials[j].pos);
             if(dist < minDist)
             {
                 materialIdx = j;
@@ -110,7 +110,7 @@ void randInitMaterial(struct Material materials[MAXN], int* materialsNum)
     
     for(int i = 0; i < *materialsNum; i ++)
     {
-        int selectLocation = random(numPoints / *materialsNum * i, numPoints / *materialsNum * (i + 1) - 1);
+        int selectLocation = random(MAX_POINTS / *materialsNum * i, MAX_POINTS / *materialsNum * (i + 1) - 1);
         randMaterial(&materials[i], selectLocation);
     }
 }
@@ -141,15 +141,15 @@ void mutateMaterial(struct Material materials[MAXN], int* materialsNum)
     {
         int selectMaterialIdx = random(0, *materialsNum - 1);
         struct Material *material = &newMaterials[selectMaterialIdx];
-        randMaterial(material, material->pIdx);
+        randMaterial(material, material->pos[0] + material->pos[1] * MAX_SIDE_1 + material->pos[2] * MAX_SIDE_1 * MAX_SIDE_1);
     }
     else if(selectMutate == 2)
     {
         int selectMaterialIdx1 = random(0, *materialsNum - 1);
         int selectMaterialIdx2 = (selectMaterialIdx1 + random(1, *materialsNum - 1)) % *materialsNum; // prevent choosing the same index
         
-        newMaterials[selectMaterialIdx1].pIdx = materials[selectMaterialIdx2].pIdx;
-        newMaterials[selectMaterialIdx2].pIdx = materials[selectMaterialIdx1].pIdx;
+        newMaterials[selectMaterialIdx1].setPos(materials[selectMaterialIdx2].pIdx());
+        newMaterials[selectMaterialIdx2].setPos(materials[selectMaterialIdx1].pIdx());
     }
     else if(selectMutate == 3)
     {
@@ -164,7 +164,7 @@ void mutateMaterial(struct Material materials[MAXN], int* materialsNum)
           
           for(int i = 0; i < *materialsNum; i ++)
           {
-              if(materials[i].pIdx == selectLocation)
+              if(materials[i].pIdx() == selectLocation)
               {
                   invalid = true;
               }
@@ -290,20 +290,19 @@ void randMaterial(struct Material* material, int location)
     if(selectMaterial == 0)
     {
         hardSupport(material);
-        material->pIdx = location;
     }
     /* soft support */
     else if(selectMaterial == 1)
     {
         softSupport(material);
-        material->pIdx = location;
     }
     /* random muscle */
     else if(selectMaterial == 2 || selectMaterial == 3)
     {
         randMuscle(material);
-        material->pIdx = location;
     }
+    
+    material->setPos(location);
 }
 
 /*
@@ -452,8 +451,7 @@ void printMaterials(struct Material materials[MAXN], int materialsNum)
 {
     for(int i = 0; i < materialsNum; i ++)
     {
-        int idx = materials[i].pIdx;
-        printf("location=(%f %f %f)\n", points[idx].pos[0], points[idx].pos[1], points[idx].pos[2]);
+        printf("location=(%f %f %f)\n", materials[i].pos[0], materials[i].pos[1], materials[i].pos[2]);
         printf("muscle = %d\n", materials[i].muscle);
         if(materials[i].muscle)
         {

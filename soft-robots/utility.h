@@ -12,7 +12,9 @@
 #define MAXN_SQR 2000
 
 const int MAX_SIDE = 4;
+const int MAX_SIDE_1 = MAX_SIDE + 1;
 const int MAX_BLOCKS = MAX_SIDE * MAX_SIDE * MAX_SIDE;
+const int MAX_POINTS = (MAX_SIDE + 1) * (MAX_SIDE + 1) * (MAX_SIDE + 1);
 
 struct Point
 {
@@ -38,13 +40,25 @@ struct Spring
 
 struct Material
 {
-    int pIdx;
+    double pos[3];
     double len;
     double k;
     bool muscle = false;
     double omega;
     double b;
     double c;
+    
+    int pIdx()
+    {
+        return pos[0] + pos[1] * MAX_SIDE_1 + pos[2] * MAX_SIDE_1;
+    };
+    
+    void setPos(int pIdx)
+    {
+        pos[0] = pIdx % (MAX_SIDE_1);
+        pos[1] = pIdx % (MAX_SIDE_1 * MAX_SIDE_1) / MAX_SIDE_1;
+        pos[2] = pIdx / MAX_SIDE_1 / MAX_SIDE_1;
+    };
 };
 
 #endif /* utility_h */
