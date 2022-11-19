@@ -16,6 +16,11 @@ const int MAX_SIDE_1 = MAX_SIDE + 1;
 const int MAX_BLOCKS = MAX_SIDE * MAX_SIDE * MAX_SIDE;
 const int MAX_POINTS = (MAX_SIDE + 1) * (MAX_SIDE + 1) * (MAX_SIDE + 1);
 
+const int testNum = 1;
+const int evaluationTimes = 100;
+const int selectInterval = 5;
+const int sampleSize = 10;
+
 struct Point
 {
     double mass;

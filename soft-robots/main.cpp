@@ -20,6 +20,7 @@ using namespace std;
 #include "setPoints.hpp"
 #include "createObject.hpp"
 #include "evolve.hpp"
+#include "evolveBody.hpp"
 #include "draw.hpp"
 
 extern const double TIME_STEP = 0.0001;
@@ -31,16 +32,13 @@ extern int numSprings;
 extern struct Point points[MAXN];
 extern struct Spring springs[MAXN];
 
-const int testNum = 1;
-const int evaluationTimes = 100;
-const int sampleSize = 10;
-const int selectInterval = 5;
-bool toWriteDiversity = true;
+bool toWriteDiversity = false;
 
 double bestSpeed[evaluationTimes];
 char folderName[100] = "/Users/CJChen/Desktop/CourseworksF2022/softRobotDocs/data/";
 char filenameSpeed[100];
 char filenameMaterial[100];
+char filenameRules[100];
 char filenameDiversity[100];
 
 int selectRun = 0;
@@ -53,11 +51,14 @@ void evolutionAlgo();
 
 /* helper functions */
 void initObject();
+void initObject(bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6]);
 void writeSpeed();
 void testOpenFile();
 void writeDiversity(double diversity[evaluationTimes]);
 void writeMaterial(FILE* file, struct Material materials[MAXN], int materialsNum);
 int readMaterial(char filename[100], struct Material materials[MAXN]);
+void writeRules(bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6]);
+void readRules(char filenameRules[100], bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6]);
 void printMaterials(struct Material materials[MAXN], int materialsNum);
 
 int main()
@@ -67,28 +68,32 @@ int main()
     /* 0: cube, 1: 2 cubes, 2: walking cubes, 3: insect*/
     selectObject = 2;
     
-    strcat(folderName, "walking-cubes/");
-    
+    strcat(folderName, "random-cubes/");
+    /*
     pid_t pid = 1;
     auto start = chrono::high_resolution_clock::now();
     for(int i = 0; i < testNum; i ++)
     {
-        pid = fork();
-        if(pid != 0) continue;
+//        pid = fork();
+//        if(pid != 0) continue;
         srand((unsigned int)time(NULL)^(i));
         
         filenameSpeed[0] = 0;
         filenameMaterial[0] = 0;
+        filenameRules[0] = 0;
         filenameDiversity[0] = 0;
         strcat(filenameSpeed, folderName);
         strcat(filenameMaterial, folderName);
+        strcat(filenameRules, folderName);
         strcat(filenameDiversity, folderName);
 
         char tmpfilenameSpeed[100];
         char tmpfilenameMaterial[100];
+        char tmpfilenameRules[100];
         char tmpfilenameDiversity[100];
         snprintf(tmpfilenameSpeed, 12, "speed_%d.csv", i + 1);
         snprintf(tmpfilenameMaterial, 15, "material_%d.txt", i + 1);
+        snprintf(tmpfilenameRules, 12, "rules_%d.txt", i + 1);
         snprintf(tmpfilenameDiversity, 16, "diversity_%d.txt", i + 1);
 
         if(selectRun == 0)
@@ -117,42 +122,49 @@ int main()
             strcat(filenameMaterial, "EA/");
             strcat(filenameMaterial, tmpfilenameMaterial);
             
+            strcat(filenameRules, "EA/");
+            strcat(filenameRules, tmpfilenameRules);
+            
             strcat(filenameDiversity, "EA/");
             strcat(filenameDiversity, tmpfilenameDiversity);
             evolutionAlgo();
         }
         writeSpeed();
         
-        break;
+//        break;
     }
     
     if(pid > 0)
     {
-        int status;
-        int tmpTestNum = testNum;
-        while (tmpTestNum --)
-        {
-            while(wait(&status) > 0);
-            printf("%d\n", status);
-        }
+//        int status;
+//        int tmpTestNum = testNum;
+//        while (tmpTestNum --)
+//        {
+//            while(wait(&status) > 0);
+//            printf("%d\n", status);
+//        }
         auto stop = chrono::high_resolution_clock::now();
         auto duration = duration_cast<chrono::microseconds>(stop - start);
         cout << "Time taken by function: "
              << duration.count() / 1000000 << " seconds" << endl;
     }
-    
+    */
     /* draw best robot */
-    /*
-    initObject();
+    
+    strcat(filenameRules, folderName);
+    strcat(filenameRules, "EA/rules_1.txt");
     strcat(filenameMaterial, folderName);
-    strcat(filenameMaterial, "EA_300/material_3.txt");
+    strcat(filenameMaterial, "EA/material_1.txt");
+    bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6];
+    readRules(filenameRules, rules);
+    initObject(rules);
+    
     struct Material materials[MAXN];
     int materialsNum = 0;
     materialsNum = readMaterial(filenameMaterial, materials);
     applyMaterialtoSprings(materials, materialsNum);
-    printSprings();
     draw();
-    */
+    
     
     return 0;
 }
@@ -165,10 +177,12 @@ void randomSearch()
     double individualSpeedPath[sampleSize];
     int individualMaterialNum[sampleSize];
     struct Material individualMaterial[sampleSize][MAXN];
+    bool individualRules[sampleSize][MAX_SIDE][MAX_SIDE][MAX_SIDE][6];
 
     for(int sample = 0; sample < sampleSize; sample ++)
     {
-        initObject();
+        randomRules(individualRules[sample]);
+        initObject(individualRules[sample]);
         randInitMaterial(individualMaterial[sample], &individualMaterialNum[sample]);
         applyMaterialtoSprings(individualMaterial[sample], individualMaterialNum[sample]);
         speed(points, individualSpeed[sample], individualSpeedPath[sample]);
@@ -182,7 +196,8 @@ void randomSearch()
     {
         for(int sample = 0; sample < sampleSize; sample ++)
         {
-            initObject();
+            randomRules(individualRules[sample]);
+            initObject(individualRules[sample]);
             randInitMaterial(individualMaterial[sample], &individualMaterialNum[sample]);
             applyMaterialtoSprings(individualMaterial[sample], individualMaterialNum[sample]);
             speed(points, individualSpeed[sample], individualSpeedPath[sample]);
@@ -214,7 +229,28 @@ void randomSearch()
     return;
 }
 
-static void hillClimbStep(struct Material *bestMaterial, int &bestMaterialNum, double &maxSpeed, double &maxSpeedPath) {
+static void hillClimbStep(
+    struct Material *bestMaterial,
+    int &bestMaterialNum,
+    double &maxSpeed,
+    double &maxSpeedPath,
+    bool bestRules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6])
+{
+    bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6];
+    for(int i = 0; i < MAX_SIDE; i ++)
+    {
+        for(int j = 0; j < MAX_SIDE; j ++)
+        {
+            for(int k = 0; k < MAX_SIDE; k ++)
+            {
+                for(int dir = 0; dir < 6; dir ++)
+                {
+                    rules[i][j][k][dir] = bestRules[i][j][k][dir];
+                }
+            }
+        }
+    }
+    
     struct Material materials[MAXN];
     int materialsNum = bestMaterialNum;
     
@@ -223,8 +259,8 @@ static void hillClimbStep(struct Material *bestMaterial, int &bestMaterialNum, d
         materials[i] = bestMaterial[i];
     }
     
-    initObject();
-    mutateMaterial(materials, &materialsNum);
+    initObject(rules);
+    mutate(materials, &materialsNum, rules);
     applyMaterialtoSprings(materials, materialsNum);
     
     double sp, spPath;
@@ -234,6 +270,21 @@ static void hillClimbStep(struct Material *bestMaterial, int &bestMaterialNum, d
     {
         maxSpeed = sp;
         maxSpeedPath = spPath;
+        
+        for(int i = 0; i < MAX_SIDE; i ++)
+        {
+            for(int j = 0; j < MAX_SIDE; j ++)
+            {
+                for(int k = 0; k < MAX_SIDE; k ++)
+                {
+                    for(int dir = 0; dir < 6; dir ++)
+                    {
+                        bestRules[i][j][k][dir] = rules[i][j][k][dir];
+                    }
+                }
+            }
+        }
+        
         for(int i = 0; i < materialsNum; i ++)
         {
             bestMaterial[i] = materials[i];
@@ -251,10 +302,12 @@ void hillClimber()
     double individualSpeedPath[sampleSize];
     int individualMaterialNum[sampleSize];
     struct Material individualMaterial[sampleSize][MAXN];
+    bool individualRules[sampleSize][MAX_SIDE][MAX_SIDE][MAX_SIDE][6];
 
     for(int sample = 0; sample < sampleSize; sample ++)
     {
-        initObject();
+        randomRules(individualRules[sample]);
+        initObject(individualRules[sample]);
         randInitMaterial(individualMaterial[sample], &individualMaterialNum[sample]);
         applyMaterialtoSprings(individualMaterial[sample], individualMaterialNum[sample]);
         speed(points, individualSpeed[sample], individualSpeedPath[sample]);
@@ -274,7 +327,8 @@ void hillClimber()
             hillClimbStep(individualMaterial[sample],
                           individualMaterialNum[sample],
                           individualSpeed[sample],
-                          individualSpeedPath[sample]);
+                          individualSpeedPath[sample],
+                          individualRules[sample]);
             double fitness = speedFitness(individualSpeed[sample], individualSpeedPath[sample]);
             
             if(fitness > maxFitness)
@@ -304,6 +358,7 @@ void hillClimber()
 }
 
 void updateIndividualSpeed(
+    bool rules[sampleSize][MAX_SIDE][MAX_SIDE][MAX_SIDE][6],
     struct Material individualMaterial[sampleSize][MAXN],
     int individualMaterialNum[sampleSize],
     double individualSpeed[sampleSize],
@@ -311,7 +366,7 @@ void updateIndividualSpeed(
 {
     for(int i = 0; i < sampleSize; i ++)
     {
-        initObject();
+        initObject(rules[i]);
         applyMaterialtoSprings(individualMaterial[i], individualMaterialNum[i]);
         speed(points, individualSpeed[i], individualSpeedPath[i]);
     }
@@ -327,23 +382,24 @@ void evolutionAlgo()
     double individualSpeedPath[sampleSize];
     int individualMaterialNum[sampleSize];
     struct Material individualMaterial[sampleSize][MAXN];
-    
+    bool individualRules[sampleSize][MAX_SIDE][MAX_SIDE][MAX_SIDE][6];
 
     for(int sample = 0; sample < sampleSize; sample ++)
     {
-        initObject();
+        randomRules(individualRules[sample]);
+        initObject(individualRules[sample]);
         randInitMaterial(individualMaterial[sample], &individualMaterialNum[sample]);
         applyMaterialtoSprings(individualMaterial[sample], individualMaterialNum[sample]);
         speed(points, individualSpeed[sample], individualSpeedPath[sample]);
     }
     
-    int bestMaterialIdx = 0;
+    int bestRobotIdx = 0;
     double maxSpeed = 0;
     double maxFitness = -1 * INFINITY;
     
     for(int i = 0; i < evaluationTimes; i ++)
     {
-        bestMaterialIdx = 0;
+        bestRobotIdx = 0;
         maxSpeed = 0;
         maxFitness = -1 * INFINITY;
         for(int sample = 0; sample < sampleSize; sample ++)
@@ -351,27 +407,29 @@ void evolutionAlgo()
             hillClimbStep(individualMaterial[sample],
                           individualMaterialNum[sample],
                           individualSpeed[sample],
-                          individualSpeedPath[sample]);
+                          individualSpeedPath[sample],
+                          individualRules[sample]);
             double fitness = speedFitness(individualSpeed[sample], individualSpeedPath[sample]);
             
             if(fitness > maxFitness)
             {
                 maxFitness = fitness;
                 maxSpeed = individualSpeed[sample];
-                bestMaterialIdx = sample;
+                bestRobotIdx = sample;
             }
             
-            printf("%lf, ", individualSpeed[sample]);
+//            printf("%lf, ", individualSpeed[sample]);
         }
-        printf("\n");
+//        printf("\n");
         bestSpeed[i] = maxSpeed;
         
         if((i + 1) % selectInterval == 0 && (i + 1) != evaluationTimes)
         {
             basicSelect(individualMaterial, individualMaterialNum, individualSpeed);
-            updateIndividualSpeed(individualMaterial, individualMaterialNum, individualSpeed, individualSpeedPath);
+            updateIndividualSpeed(individualRules, individualMaterial, individualMaterialNum, individualSpeed, individualSpeedPath);
         }
         
+        /* TO DO: write diversity does NOT work!!! */
         if(toWriteDiversity)
         {
             initObject();
@@ -379,7 +437,7 @@ void evolutionAlgo()
         }
     }
     
-    applyMaterialtoSprings(individualMaterial[bestMaterialIdx], individualMaterialNum[bestMaterialIdx]);
+    applyMaterialtoSprings(individualMaterial[bestRobotIdx], individualMaterialNum[bestRobotIdx]);
     printf("speed: %f\n", maxSpeed);
     
     FILE* fileMaterial = fopen(filenameMaterial, "w+");
@@ -388,15 +446,22 @@ void evolutionAlgo()
         perror(filenameSpeed);
         exit(1);
     }
-    writeMaterial(fileMaterial, individualMaterial[bestMaterialIdx], individualMaterialNum[bestMaterialIdx]);
+    writeMaterial(fileMaterial, individualMaterial[bestRobotIdx], individualMaterialNum[bestRobotIdx]);
     fclose(fileMaterial);
-    
+    writeRules(individualRules[bestRobotIdx]);
     writeDiversity(diversity);
     
     return;
 }
 
 /* helper methods */
+void initObject(bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6])
+{
+    generateObject(rules);
+    
+    return;
+}
+
 void initObject()
 {
     if(selectObject == 0)
@@ -427,6 +492,7 @@ void testOpenFile()
 {
     FILE* fileSpeed = fopen(filenameSpeed, "w+");
     FILE* fileMaterial = fopen(filenameMaterial, "w+");
+    FILE* fileRules = fopen(filenameRules, "w+");
     if(fileSpeed == NULL)
     {
         perror(filenameSpeed);
@@ -437,8 +503,14 @@ void testOpenFile()
         perror(filenameMaterial);
         exit(1);
     }
+    if(fileRules == NULL)
+    {
+        perror(filenameRules);
+        exit(1);
+    }
     fclose(fileSpeed);
     fclose(fileMaterial);
+    fclose(fileRules);
 }
 
 void writeSpeed()
@@ -473,7 +545,7 @@ void  writeMaterial(FILE* file, struct Material materials[MAXN], int materialsNu
     for(int i = 0; i < materialsNum; i ++)
     {
         fprintf(file, "material\n");
-        fprintf(file, "%d\n", materials[i].pIdx);
+        fprintf(file, "%lf %lf %lf\n", materials[i].pos[0], materials[i].pos[0], materials[i].pos[0]);
         fprintf(file, "%lf\n", materials[i].len);
         fprintf(file, "%lf\n", materials[i].k);
         fprintf(file, "%d\n", materials[i].muscle);
@@ -487,6 +559,69 @@ void  writeMaterial(FILE* file, struct Material materials[MAXN], int materialsNu
     return;
 }
 
+void writeRules(bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6])
+{
+    FILE* fileRules = fopen(filenameRules, "w+");
+    if(fileRules == NULL)
+    {
+        perror(filenameRules);
+        exit(1);
+    }
+    
+    fprintf(fileRules, "%d\n", MAX_SIDE);
+    
+    for(int i = 0; i < MAX_SIDE; i ++)
+    {
+        for(int j = 0; j < MAX_SIDE; j ++)
+        {
+            for(int k = 0; k < MAX_SIDE; k ++)
+            {
+                for(int dir = 0; dir < 6; dir ++)
+                {
+                    fprintf(fileRules, "%d ", rules[i][j][k][dir]);
+                }
+                fprintf(fileRules, "\n");
+            }
+        }
+    }
+    
+    fclose(fileRules);
+    return;
+}
+
+void readRules(char filenameRules[100], bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6])
+{
+    FILE* fileRules = fopen(filenameRules, "r");
+    if(fileRules == NULL)
+    {
+        perror(filenameRules);
+        exit(1);
+    }
+    
+    int maxside;
+    fscanf(fileRules, "%d\n", &maxside);
+    
+    for(int i = 0; i < maxside; i ++)
+    {
+        for(int j = 0; j < maxside; j ++)
+        {
+            for(int k = 0; k < maxside; k ++)
+            {
+                for(int dir = 0; dir < 6; dir ++)
+                {
+                    int rule;
+                    fscanf(fileRules, "%d ", &rule);
+                    rules[i][j][k][dir] = rule;
+                }
+                fscanf(fileRules, "\n");
+            }
+        }
+    }
+    
+    fclose(fileRules);
+    return;
+}
+
 void writeDiversity(double diversity[evaluationTimes])
 {
     if(!toWriteDiversity) return;
@@ -494,7 +629,7 @@ void writeDiversity(double diversity[evaluationTimes])
     FILE* fileDiverse = fopen(filenameDiversity, "w+");
     if(fileDiverse == NULL)
     {
-        perror(filenameSpeed);
+        perror(filenameDiversity);
         exit(1);
     }
     
@@ -519,7 +654,7 @@ int readMaterial(char filename[100], struct Material materials[MAXN])
     int materialsNum = 0;
     while(fscanf(file, "material\n") != EOF)
     {
-        fscanf(file, "%d\n", &materials[materialsNum].pIdx);
+        fscanf(file, "%lf %lf %lf\n", &materials[materialsNum].pos[0], &materials[materialsNum].pos[1], &materials[materialsNum].pos[2]);
         fscanf(file, "%lf\n", &materials[materialsNum].len);
         fscanf(file, "%lf\n", &materials[materialsNum].k);
         fscanf(file, "%d\n", &materials[materialsNum].muscle);

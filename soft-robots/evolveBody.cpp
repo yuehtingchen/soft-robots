@@ -115,7 +115,7 @@ void generateObject(bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6])
         }
     }
 
-    printf("%d %d\n", numPoints, numSprings);
+//    printf("%d %d\n", numPoints, numSprings);
 
     return;
 }

@@ -16,7 +16,6 @@
 extern double T;
 extern const double TIME_STEP;
 extern const double MAX_TIME;
-extern const int sampleSize = 10;
 
 extern int numPoints;
 extern int numSprings;
@@ -116,6 +115,26 @@ void randInitMaterial(struct Material materials[MAXN], int* materialsNum)
 }
 
 /*
+ * change 1 or 3 rules in the body
+ */
+void mutateBody(bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6])
+{
+    int rulesNum = 3;
+    
+    while(rulesNum --)
+    {
+        int x = random(0, MAX_SIDE - 1);
+        int y = random(0, MAX_SIDE - 1);
+        int z = random(0, MAX_SIDE - 1);
+        int dir = random(0, 5);
+        
+        rules[x][y][z][dir] = !rules[x][y][z][dir];
+    }
+    
+    return;
+}
+
+/*
  * Possible mutations include
  * 1. replacing one type of material to another
  * 2. swapping location of two materials
@@ -197,6 +216,21 @@ void mutateMaterial(struct Material materials[MAXN], int* materialsNum)
     return;
 }
 
+void mutate(struct Material materials[MAXN], int* materialsNum, bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6])
+{
+    int materialOrRule = random(0, 1);
+    if(materialOrRule == 0)
+    {
+        mutateMaterial(materials, materialsNum);
+    }
+    else
+    {
+        mutateBody(rules);
+    }
+    
+    return;
+}
+
 
 /* overwrite from left index (inclusive) to right index (not inclusive) */
 void crossOver(
@@ -214,8 +248,8 @@ void crossOver(
     }
     
     int minMaterialsNum = *materialsNum1 < *materialsNum2 ? *materialsNum1 : *materialsNum2;
-    int left = random(0, minMaterialsNum - 2);
-    int right = random(left + 1, minMaterialsNum - 1);
+    int left = random(0, minMaterialsNum - 1);
+    int right = random(left + 1, minMaterialsNum);
     int offset1 = random(0, *materialsNum1 - minMaterialsNum);
     int offset2 = random(0, *materialsNum2 - minMaterialsNum);
     

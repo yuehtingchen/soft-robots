@@ -11,7 +11,9 @@
 
 void applyMaterialtoSprings(struct Material* materials, int materialsNum);
 void randInitMaterial(struct Material* materials, int* materialsNum);
+void mutateBody(bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6]);
 void mutateMaterial(struct Material* materials, int* materialsNum);
+void mutate(struct Material materials[MAXN], int* materialsNum, bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6]);
 void crossOver(struct Material* materials1, int* materialsNum1, struct Material* materials2, int* materialsNum2, struct Material* offspring, int* offspringNum);
 void basicSelect(struct Material materials[][MAXN], int* materialsNum, double* speed);
 void speed(struct Point points[MAXN], double& speed, double& speedPath);
