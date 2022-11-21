@@ -12,6 +12,7 @@
 #include "utility.h"
 #include "createObject.hpp"
 #include "setPoints.hpp"
+#include "evolveBody.hpp"
 
 extern double T;
 extern const double TIME_STEP;
@@ -231,6 +232,44 @@ void mutate(struct Material materials[MAXN], int* materialsNum, bool rules[MAX_S
     return;
 }
 
+/* create offspring as rules 1 with a replaced section of rules 2 */
+void crossOver(
+    bool rules1[MAX_SIDE][MAX_SIDE][MAX_SIDE][6],
+    bool rules2[MAX_SIDE][MAX_SIDE][MAX_SIDE][6],
+    bool rulesOffspring[MAX_SIDE][MAX_SIDE][MAX_SIDE][6])
+{
+    for(int i = 0; i < MAX_SIDE; i ++)
+    {
+        for(int j = 0; j < MAX_SIDE; j ++)
+        {
+            for(int k = 0; k < MAX_SIDE; k ++)
+            {
+                for(int dir = 0; dir < 6; dir ++)
+                {
+                    rulesOffspring[i][j][k][dir] = rules1[i][j][k][dir];
+                }
+            }
+        }
+    }
+    int leftX = random(0, MAX_SIDE - 1), leftY = random(0, MAX_SIDE - 1), leftZ = random(0, MAX_SIDE - 1);
+    int rightX = random(leftX + 1, MAX_SIDE), rightY = random(leftY + 1, MAX_SIDE), rightZ = random(leftZ + 1, MAX_SIDE);
+    printf("%d %d %d\n", leftX, leftY, leftZ);
+    printf("%d %d %d\n", rightX, rightY, rightZ);
+    
+    for(int i = leftX; i < rightX; i ++)
+    {
+        for(int j = leftY; j < rightY; j ++)
+        {
+            for(int k = leftZ; k < rightZ; k ++)
+            {
+                for(int dir = 0; dir < 6; dir ++)
+                {
+                    rulesOffspring[i][j][k][dir] = rules2[i][j][k][dir];
+                }
+            }
+        }
+    }
+}
 
 /* overwrite from left index (inclusive) to right index (not inclusive) */
 void crossOver(
@@ -261,7 +300,7 @@ void crossOver(
     return;
 }
 
-void basicSelect(struct Material materials[sampleSize][MAXN], int materialsNum[sampleSize], double speed[sampleSize])
+void basicSelect(struct Material materials[sampleSize][MAXN], int materialsNum[sampleSize], bool rules[sampleSize][MAX_SIDE][MAX_SIDE][MAX_SIDE][6], double speed[sampleSize])
 {
     double fitness[sampleSize];
     int pressure = 0.5 * sampleSize;
@@ -304,6 +343,7 @@ void basicSelect(struct Material materials[sampleSize][MAXN], int materialsNum[s
             crossOver(oldMaterials[momIdx], &oldMaterialsNum[momIdx],
                       oldMaterials[dadIdx], &oldMaterialsNum[dadIdx],
                       materials[i], &materialsNum[i]);
+            crossOver(rules[momIdx], rules[dadIdx], rules[i]);
         }
     }
     
@@ -427,39 +467,46 @@ double compareSprings(struct Spring a, struct Spring b)
     }
 }
 
-double compareObjects(struct Spring springs1[MAXN_SQR], struct Spring springs2[MAXN_SQR], int numSprings)
+double compareObjects(struct Spring springs1[MAXN_SQR], struct Spring springs2[MAXN_SQR], int numSprings1, int numSprings2)
 {
+    int minSprings = numSprings1 < numSprings2 ? numSprings1 : numSprings2;
     double diff = 0;
-    for(int q = 0; q < numSprings; q ++)
+    for(int q = 0; q < minSprings; q ++)
     {
         diff += compareSprings(springs1[q], springs2[q]);
     }
+    diff += abs(numSprings2 - numSprings1);
     
     return diff / numSprings;
 }
 
-double getDiversity(struct Material materials[sampleSize][MAXN], int materialsNum[sampleSize])
+double getDiversity(struct Material materials[sampleSize][MAXN], int materialsNum[sampleSize], bool rules[sampleSize][MAX_SIDE][MAX_SIDE][MAX_SIDE][6])
 {
     double diff = 0;
     struct Spring tmpSpring1[MAXN_SQR];
     struct Spring tmpSpring2[MAXN_SQR];
+    int numSprings1 = 0, numSprings2 = 0;
     for(int i = 0; i < sampleSize; i ++)
     {
+        generateObject(rules[i]);
         applyMaterialtoSprings(materials[i], materialsNum[i]);
         for(int j = 0; j < numSprings; j ++)
         {
             tmpSpring1[j] = springs[j];
         }
+        numSprings1 = numSprings;
         
         for(int j = i + 1; j < sampleSize; j ++)
         {
+            generateObject(rules[j]);
             applyMaterialtoSprings(materials[j], materialsNum[j]);
             for(int k = 0; k < numSprings; k ++)
             {
                 tmpSpring2[k] = springs[k];
             }
+            numSprings2 = numSprings;
             
-            diff += compareObjects(tmpSpring1, tmpSpring2, numSprings);
+            diff += compareObjects(tmpSpring1, tmpSpring2, numSprings1, numSprings2);
         }
     }
     

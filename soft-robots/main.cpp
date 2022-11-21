@@ -32,7 +32,7 @@ extern int numSprings;
 extern struct Point points[MAXN];
 extern struct Spring springs[MAXN];
 
-bool toWriteDiversity = false;
+bool toWriteDiversity = true;
 
 double bestSpeed[evaluationTimes];
 char folderName[100] = "/Users/CJChen/Desktop/CourseworksF2022/softRobotDocs/data/";
@@ -74,8 +74,8 @@ int main()
     auto start = chrono::high_resolution_clock::now();
     for(int i = 0; i < testNum; i ++)
     {
-//        pid = fork();
-//        if(pid != 0) continue;
+        pid = fork();
+        if(pid != 0) continue;
         srand((unsigned int)time(NULL)^(i));
         
         filenameSpeed[0] = 0;
@@ -131,30 +131,31 @@ int main()
         }
         writeSpeed();
         
-//        break;
+        break;
     }
     
     if(pid > 0)
     {
-//        int status;
-//        int tmpTestNum = testNum;
-//        while (tmpTestNum --)
-//        {
-//            while(wait(&status) > 0);
-//            printf("%d\n", status);
-//        }
+        int status;
+        int tmpTestNum = testNum;
+        while (tmpTestNum --)
+        {
+            while(wait(&status) > 0);
+            printf("%d\n", status);
+        }
         auto stop = chrono::high_resolution_clock::now();
         auto duration = duration_cast<chrono::microseconds>(stop - start);
         cout << "Time taken by function: "
              << duration.count() / 1000000 << " seconds" << endl;
     }
     */
+    
     /* draw best robot */
     
     strcat(filenameRules, folderName);
-    strcat(filenameRules, "EA/rules_1.txt");
+    strcat(filenameRules, "EA_100_100/rules_5.txt");
     strcat(filenameMaterial, folderName);
-    strcat(filenameMaterial, "EA/material_1.txt");
+    strcat(filenameMaterial, "EA_100_100/material_5.txt");
     bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6];
     readRules(filenameRules, rules);
     initObject(rules);
@@ -425,15 +426,14 @@ void evolutionAlgo()
         
         if((i + 1) % selectInterval == 0 && (i + 1) != evaluationTimes)
         {
-            basicSelect(individualMaterial, individualMaterialNum, individualSpeed);
+            basicSelect(individualMaterial, individualMaterialNum, individualRules, individualSpeed);
             updateIndividualSpeed(individualRules, individualMaterial, individualMaterialNum, individualSpeed, individualSpeedPath);
         }
         
-        /* TO DO: write diversity does NOT work!!! */
         if(toWriteDiversity)
         {
             initObject();
-            diversity[i] = getDiversity(individualMaterial, individualMaterialNum);
+            diversity[i] = getDiversity(individualMaterial, individualMaterialNum, individualRules);
         }
     }
     
