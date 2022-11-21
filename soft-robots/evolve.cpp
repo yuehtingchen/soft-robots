@@ -307,7 +307,7 @@ void crossOver(
 }
 
 /* TO DO: update fitness function for basic select*/
-void basicSelect(struct Material materials[sampleSize][MAXN], int materialsNum[sampleSize], bool rules[sampleSize][MAX_SIDE][MAX_SIDE][MAX_SIDE][6], double speed[sampleSize])
+void basicSelect(struct Material materials[sampleSize][MAXN], int materialsNum[sampleSize], bool rules[sampleSize][MAX_SIDE][MAX_SIDE][MAX_SIDE][6], double sp[sampleSize], double speedPath[sampleSize])
 {
     double fitness[sampleSize];
     int pressure = 0.5 * sampleSize;
@@ -315,7 +315,7 @@ void basicSelect(struct Material materials[sampleSize][MAXN], int materialsNum[s
     
     for(int i = 0; i < sampleSize; i ++)
     {
-        fitness[i] = speed[i];
+        fitness[i] = speedFitness(sp[sampleSize], speedPath[sampleSize]);
     }
     
     for(int i = 0; i < sampleSize; i ++)
@@ -334,31 +334,46 @@ void basicSelect(struct Material materials[sampleSize][MAXN], int materialsNum[s
     struct Material oldMaterials[sampleSize][MAXN];
     int oldMaterialsNum[sampleSize];
     double oldSpeed[sampleSize];
+    double oldspeedPath[sampleSize];
     bool oldRules[sampleSize][MAX_SIDE][MAX_SIDE][MAX_SIDE][6];
     
     for(int i = 0; i < sampleSize; i ++)
     {
         copyMaterial(materials[i], oldMaterials[i], materialsNum[i]);
         oldMaterialsNum[i] = materialsNum[i];
-        oldSpeed[i] = speed[i];
-    }
-    
-    for(int i = 0; i < sampleSize; i ++)
-    {
+        oldSpeed[i] = sp[i];
+        oldspeedPath[i] = speedPath[i];
         copyRules(rules[i], oldRules[i]);
     }
     
     for(int i = 0; i < sampleSize; i ++)
     {
-        if(speed[i] < thresholdFitness)
+        if(fitness[i] < thresholdFitness)
         {
-            printf("%d\n", i);
+            struct Material tmpMaterials[MAXN];
+            int tmpMaterialsNum;
+            double tmpSpeed = 0, tmpSpPath = 0;
+            bool tmpRules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6];
+            
             int momIdx = random(0, sampleSize - 2);
             int dadIdx = random(momIdx + 1, sampleSize - 1);
             crossOver(oldMaterials[momIdx], &oldMaterialsNum[momIdx],
                       oldMaterials[dadIdx], &oldMaterialsNum[dadIdx],
-                      materials[i], &materialsNum[i]);
-            crossOver(rules[momIdx], oldRules[dadIdx], oldRules[i]);
+                      tmpMaterials, &tmpMaterialsNum);
+            crossOver(oldRules[momIdx], oldRules[dadIdx], tmpRules);
+            
+            generateObject(tmpRules);
+            applyMaterialtoSprings(tmpMaterials, tmpMaterialsNum);
+            speed(points, tmpSpeed, tmpSpeed);
+            
+            if(speedFitness(tmpSpeed, tmpSpPath) > fitness[i])
+            {
+                printf("%d\n", i);
+                sp[i] = tmpSpeed;
+                speedPath[i] = tmpSpPath;
+                copyMaterial(tmpMaterials, materials[i], materialsNum[i]);
+                copyRules(tmpRules, rules[i]);
+            }
         }
     }
     
@@ -534,7 +549,15 @@ void copyMaterial(struct Material* materialSrc, struct Material* materialDest, i
 {
     for(int i = 0; i < materialsNum; i ++)
     {
-        materialDest[i] = materialSrc[i];
+        materialDest[i].pos[0] = materialSrc[i].pos[0];
+        materialDest[i].pos[1] = materialSrc[i].pos[1];
+        materialDest[i].pos[2] = materialSrc[i].pos[2];
+        materialDest[i].len = materialSrc[i].len;
+        materialDest[i].k = materialSrc[i].k;
+        materialDest[i].muscle = materialSrc[i].muscle;
+        materialDest[i].omega = materialSrc[i].omega;
+        materialDest[i].b = materialSrc[i].b;
+        materialDest[i].c = materialSrc[i].c;
     }
 }
 

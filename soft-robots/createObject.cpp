@@ -374,6 +374,10 @@ void initializeSpringsForEachCube(int pIdx, struct Point* points[], int numPoint
             springs[p].p2 = points[j];
             springs[p].len = calcDist(points[i]->pos, points[j]->pos);
             springs[p].k = 10000;
+            springs[p].muscle = false;
+            springs[p].omega = 0;
+            springs[p].b = 0;
+            springs[p].c = 0;
             p ++;
         }
     }

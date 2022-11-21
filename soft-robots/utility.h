@@ -11,15 +11,35 @@
 #define MAXN 150
 #define MAXN_SQR 2000
 
-const int MAX_SIDE = 4;
+const int MAX_SIDE = 2;
 const int MAX_SIDE_1 = MAX_SIDE + 1;
 const int MAX_BLOCKS = MAX_SIDE * MAX_SIDE * MAX_SIDE;
 const int MAX_POINTS = (MAX_SIDE + 1) * (MAX_SIDE + 1) * (MAX_SIDE + 1);
 
 const int testNum = 1;
-const int evaluationTimes = 100;
+const int evaluationTimes = 1;
 const int selectInterval = 5;
 const int sampleSize = 10;
+
+const int DIR[6][3] = {
+    {1, 0, 0},
+    {-1, 0, 0},
+    {0, 1, 0},
+    {0, -1, 0},
+    {0, 0, 1},
+    {0, 0, -1},
+};
+
+const int CUBE[8][3] = {
+    {0, 0, 0},
+    {1, 0, 0},
+    {0, 1, 0},
+    {1, 1, 0},
+    {0, 0, 1},
+    {1, 0, 1},
+    {0, 1, 1},
+    {1, 1, 1},
+};
 
 struct Point
 {
@@ -49,9 +69,9 @@ struct Material
     double len;
     double k;
     bool muscle = false;
-    double omega;
-    double b;
-    double c;
+    double omega = 0;
+    double b = 0 ;
+    double c = 0;
     
     int pIdx()
     {
