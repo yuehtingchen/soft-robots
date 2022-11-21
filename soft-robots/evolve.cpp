@@ -131,6 +131,13 @@ void mutateBody(bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6])
         int dir = random(0, 5);
         
         rules[x][y][z][dir] = !rules[x][y][z][dir];
+        
+        if(x + DIR[dir][0] < 0 || x + DIR[dir][0] >= MAX_SIDE ||
+           y + DIR[dir][1] < 0 || y + DIR[dir][1] >= MAX_SIDE ||
+           z + DIR[dir][2] < 0 || z + DIR[dir][2] >= MAX_SIDE)
+        {
+            rules[x][y][z][dir] = 0;
+        }
     }
     
     return;
@@ -254,8 +261,6 @@ void crossOver(
     }
     int leftX = random(0, MAX_SIDE - 1), leftY = random(0, MAX_SIDE - 1), leftZ = random(0, MAX_SIDE - 1);
     int rightX = random(leftX + 1, MAX_SIDE), rightY = random(leftY + 1, MAX_SIDE), rightZ = random(leftZ + 1, MAX_SIDE);
-    printf("%d %d %d\n", leftX, leftY, leftZ);
-    printf("%d %d %d\n", rightX, rightY, rightZ);
     
     for(int i = leftX; i < rightX; i ++)
     {

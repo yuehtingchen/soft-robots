@@ -21,25 +21,6 @@ extern struct Point points[MAXN];
 extern struct Spring springs[MAXN_SQR];
 
 const int generatePercent = 60;
-const int DIR[6][3] = {
-    {1, 0, 0},
-    {-1, 0, 0},
-    {0, 1, 0},
-    {0, -1, 0},
-    {0, 0, 1},
-    {0, 0, -1},
-};
-
-const int CUBE[8][3] = {
-    {0, 0, 0},
-    {1, 0, 0},
-    {0, 1, 0},
-    {1, 1, 0},
-    {0, 0, 1},
-    {1, 0, 1},
-    {0, 1, 1},
-    {1, 1, 1},
-};
 
 void generateOccupancy(
     bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6],
@@ -74,6 +55,10 @@ void generateObject(bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6])
                     points[numPoints].pos[2] = k;
                     mapXYZtoPoints[i][j][k] = numPoints;
                     numPoints ++;
+                }
+                else
+                {
+                    mapXYZtoPoints[i][j][k] = -1;
                 }
             }
         }
