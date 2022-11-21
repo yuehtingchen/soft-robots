@@ -35,6 +35,7 @@ void softSupport(struct Material* material);
 void randMuscle(struct Material* material);
 void getCenterOfMass(struct Point points[MAXN], double centerPos[3]);
 void copyMaterial(struct Material* materialSrc, struct Material* materialDest, int materialsNum);
+void copyRules(bool src[MAX_SIDE][MAX_SIDE][MAX_SIDE][6], bool dest[MAX_SIDE][MAX_SIDE][MAX_SIDE][6]);
 int random(int low, int high);
 
 void speed(struct Point points[MAXN], double& speed, double& speedPath)
@@ -300,6 +301,7 @@ void crossOver(
     return;
 }
 
+/* TO DO: update fitness function for basic select*/
 void basicSelect(struct Material materials[sampleSize][MAXN], int materialsNum[sampleSize], bool rules[sampleSize][MAX_SIDE][MAX_SIDE][MAX_SIDE][6], double speed[sampleSize])
 {
     double fitness[sampleSize];
@@ -327,6 +329,8 @@ void basicSelect(struct Material materials[sampleSize][MAXN], int materialsNum[s
     struct Material oldMaterials[sampleSize][MAXN];
     int oldMaterialsNum[sampleSize];
     double oldSpeed[sampleSize];
+    bool oldRules[sampleSize][MAX_SIDE][MAX_SIDE][MAX_SIDE][6];
+    
     for(int i = 0; i < sampleSize; i ++)
     {
         copyMaterial(materials[i], oldMaterials[i], materialsNum[i]);
@@ -336,14 +340,20 @@ void basicSelect(struct Material materials[sampleSize][MAXN], int materialsNum[s
     
     for(int i = 0; i < sampleSize; i ++)
     {
+        copyRules(rules[i], oldRules[i]);
+    }
+    
+    for(int i = 0; i < sampleSize; i ++)
+    {
         if(speed[i] < thresholdFitness)
         {
+            printf("%d\n", i);
             int momIdx = random(0, sampleSize - 2);
             int dadIdx = random(momIdx + 1, sampleSize - 1);
             crossOver(oldMaterials[momIdx], &oldMaterialsNum[momIdx],
                       oldMaterials[dadIdx], &oldMaterialsNum[dadIdx],
                       materials[i], &materialsNum[i]);
-            crossOver(rules[momIdx], rules[dadIdx], rules[i]);
+            crossOver(rules[momIdx], oldRules[dadIdx], oldRules[i]);
         }
     }
     
@@ -521,6 +531,26 @@ void copyMaterial(struct Material* materialSrc, struct Material* materialDest, i
     {
         materialDest[i] = materialSrc[i];
     }
+}
+
+/* copy from src to dest */
+void copyRules(bool src[MAX_SIDE][MAX_SIDE][MAX_SIDE][6], bool dest[MAX_SIDE][MAX_SIDE][MAX_SIDE][6])
+{
+    for(int i = 0; i < MAX_SIDE; i ++)
+    {
+        for(int j = 0; j < MAX_SIDE; j ++)
+        {
+            for(int k = 0; k < MAX_SIDE; k ++)
+            {
+                for(int dir = 0; dir < 6; dir ++)
+                {
+                    dest[i][j][k][dir] = src[i][j][k][dir];
+                }
+            }
+        }
+    }
+    
+    return;
 }
 
 int random(int low, int high)

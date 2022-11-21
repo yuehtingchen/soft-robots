@@ -46,7 +46,7 @@ int selectObject = 0;
 
 void randomSearch();
 void hillClimber();
-void hillClimbStep(struct Material bestMaterial[MAXN], int* bestMaterialNum, int* maxSpeed);
+static void hillClimbStep(struct Material *bestMaterial, int &bestMaterialNum, double &maxSpeed, double &maxSpeedPath, bool bestRules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6]);
 void evolutionAlgo();
 
 /* helper functions */
@@ -69,13 +69,13 @@ int main()
     selectObject = 2;
     
     strcat(folderName, "random-cubes/");
-    /*
+    
     pid_t pid = 1;
     auto start = chrono::high_resolution_clock::now();
     for(int i = 0; i < testNum; i ++)
     {
-        pid = fork();
-        if(pid != 0) continue;
+//        pid = fork();
+//        if(pid != 0) continue;
         srand((unsigned int)time(NULL)^(i));
         
         filenameSpeed[0] = 0;
@@ -131,31 +131,31 @@ int main()
         }
         writeSpeed();
         
-        break;
+//        break;
     }
     
     if(pid > 0)
     {
-        int status;
-        int tmpTestNum = testNum;
-        while (tmpTestNum --)
-        {
-            while(wait(&status) > 0);
-            printf("%d\n", status);
-        }
+//        int status;
+//        int tmpTestNum = testNum;
+//        while (tmpTestNum --)
+//        {
+//            while(wait(&status) > 0);
+//            printf("%d\n", status);
+//        }
         auto stop = chrono::high_resolution_clock::now();
         auto duration = duration_cast<chrono::microseconds>(stop - start);
         cout << "Time taken by function: "
              << duration.count() / 1000000 << " seconds" << endl;
     }
-    */
+
     
     /* draw best robot */
-    
+    /*
     strcat(filenameRules, folderName);
-    strcat(filenameRules, "EA_100_100/rules_5.txt");
+    strcat(filenameRules, "EA_100_100_2/rules_4.txt");
     strcat(filenameMaterial, folderName);
-    strcat(filenameMaterial, "EA_100_100/material_5.txt");
+    strcat(filenameMaterial, "EA_100_100_2/material_4.txt");
     bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6];
     readRules(filenameRules, rules);
     initObject(rules);
@@ -164,8 +164,11 @@ int main()
     int materialsNum = 0;
     materialsNum = readMaterial(filenameMaterial, materials);
     applyMaterialtoSprings(materials, materialsNum);
+    double sp, spPath;
+    speed(points, sp, spPath);
+    printf("%lf %lf", sp, spPath);
     draw();
-    
+    */
     
     return 0;
 }
@@ -260,8 +263,8 @@ static void hillClimbStep(
         materials[i] = bestMaterial[i];
     }
     
-    initObject(rules);
     mutate(materials, &materialsNum, rules);
+    initObject(rules);
     applyMaterialtoSprings(materials, materialsNum);
     
     double sp, spPath;
@@ -432,7 +435,6 @@ void evolutionAlgo()
         
         if(toWriteDiversity)
         {
-            initObject();
             diversity[i] = getDiversity(individualMaterial, individualMaterialNum, individualRules);
         }
     }
