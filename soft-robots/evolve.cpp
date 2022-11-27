@@ -316,7 +316,7 @@ void basicSelect(struct Material materials[sampleSize][MAXN], int materialsNum[s
     
     for(int i = 0; i < sampleSize; i ++)
     {
-        fitness[i] = speedFitness(sp[sampleSize], speedPath[sampleSize]);
+        fitness[i] = speedFitness(sp[i], speedPath[i]);
     }
     
     for(int i = 0; i < sampleSize; i ++)
@@ -376,7 +376,7 @@ void basicSelect(struct Material materials[sampleSize][MAXN], int materialsNum[s
         
         if(speedFitness(tmpSpeed, tmpSpPath) > fitness[sampleIdx])
         {
-            printf("%d\n", sampleIdx);
+//            printf("%d\n", sampleIdx);
             sp[sampleIdx] = tmpSpeed;
             speedPath[sampleIdx] = tmpSpPath;
             copyMaterial(tmpMaterials, materials[sampleIdx], materialsNum[sampleIdx]);
