@@ -74,8 +74,8 @@ int main()
     auto start = chrono::high_resolution_clock::now();
     for(int i = 0; i < testNum; i ++)
     {
-//        pid = fork();
-//        if(pid != 0) continue;
+        pid = fork();
+        if(pid != 0) continue;
         srand((unsigned int)time(NULL)^(i));
         
         filenameSpeed[0] = 0;
@@ -103,6 +103,10 @@ int main()
 
             strcat(filenameMaterial, "RM/");
             strcat(filenameMaterial, tmpfilenameMaterial);
+            
+            strcat(filenameRules, "RM/");
+            strcat(filenameRules, tmpfilenameRules);
+            
             randomSearch();
         }
         else if(selectRun == 1)
@@ -112,6 +116,10 @@ int main()
 
             strcat(filenameMaterial, "HC/");
             strcat(filenameMaterial, tmpfilenameMaterial);
+            
+            strcat(filenameRules, "HC/");
+            strcat(filenameRules, tmpfilenameRules);
+            
             hillClimber();
         }
         else if(selectRun == 2)
@@ -131,42 +139,46 @@ int main()
         }
         writeSpeed();
         
-//        break;
+        break;
     }
     
     if(pid > 0)
     {
-//        int status;
-//        int tmpTestNum = testNum;
-//        while (tmpTestNum --)
-//        {
-//            while(wait(&status) > 0);
-//            printf("%d\n", status);
-//        }
+        int status;
+        int tmpTestNum = testNum;
+        while (tmpTestNum --)
+        {
+            while(wait(&status) > 0);
+            printf("%d\n", status);
+        }
         auto stop = chrono::high_resolution_clock::now();
         auto duration = duration_cast<chrono::microseconds>(stop - start);
         cout << "Time taken by function: "
              << duration.count() / 1000000 << " seconds" << endl;
     }
     
-    
     /* draw best robot */
     /*
+    filenameRules[0] = 0;
+    filenameMaterial[0] = 0;
     strcat(filenameRules, folderName);
-    strcat(filenameRules, "EA_100_100_2/rules_4.txt");
+    strcat(filenameRules, "EA_10_100/rules_5.txt");
     strcat(filenameMaterial, folderName);
-    strcat(filenameMaterial, "EA_100_100_2/material_4.txt");
+    strcat(filenameMaterial, "EA_10_100/material_5.txt");
     bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6];
-    readRules(filenameRules, rules);
-    initObject(rules);
-    
     struct Material materials[MAXN];
     int materialsNum = 0;
+    
+    readRules(filenameRules, rules);
     materialsNum = readMaterial(filenameMaterial, materials);
+    initObject(rules);
     applyMaterialtoSprings(materials, materialsNum);
-    double sp, spPath;
-    speed(points, sp, spPath);
-    printf("%lf %lf", sp, spPath);
+//    double sp, spPath;
+//    speed(points, sp, spPath);
+//    printf("%lf %lf\n", sp, spPath);
+    
+    initObject(rules);
+    applyMaterialtoSprings(materials, materialsNum);
     draw();
     */
     
@@ -229,6 +241,7 @@ void randomSearch()
     }
     writeMaterial(fileMaterial, individualMaterial[bestMaterialIdx], individualMaterialNum[bestMaterialIdx]);
     fclose(fileMaterial);
+    writeRules(individualRules[bestMaterialIdx]);
     
     return;
 }
@@ -357,6 +370,7 @@ void hillClimber()
     }
     writeMaterial(fileMaterial, individualMaterial[bestMaterialIdx], individualMaterialNum[bestMaterialIdx]);
     fclose(fileMaterial);
+    writeRules(individualRules[bestMaterialIdx]);
     
     return;
 }
@@ -387,7 +401,11 @@ void evolutionAlgo()
     int individualMaterialNum[sampleSize];
     struct Material individualMaterial[sampleSize][MAXN];
     bool individualRules[sampleSize][MAX_SIDE][MAX_SIDE][MAX_SIDE][6];
-
+    
+    int bestRobotIdx = 0;
+    double maxSpeed = 0;
+    double maxFitness = -1 * INFINITY;
+    
     for(int sample = 0; sample < sampleSize; sample ++)
     {
         randomRules(individualRules[sample]);
@@ -395,13 +413,18 @@ void evolutionAlgo()
         randInitMaterial(individualMaterial[sample], &individualMaterialNum[sample]);
         applyMaterialtoSprings(individualMaterial[sample], individualMaterialNum[sample]);
         speed(points, individualSpeed[sample], individualSpeedPath[sample]);
-        printf("%lf, ", individualSpeed[sample]);
+        
+        double fitness = speedFitness(individualSpeed[sample], individualSpeedPath[sample]);
+        if(fitness > maxFitness)
+        {
+            maxFitness = fitness;
+            maxSpeed = individualSpeed[sample];
+            bestRobotIdx = sample;
+        }
+        
+//        printf("%lf, ", individualSpeed[sample]);
     }
-    printf("\n");
-    
-    int bestRobotIdx = 0;
-    double maxSpeed = 0;
-    double maxFitness = -1 * INFINITY;
+//    printf("\n");
     
     for(int i = 0; i < evaluationTimes; i ++)
     {
@@ -424,9 +447,9 @@ void evolutionAlgo()
                 bestRobotIdx = sample;
             }
             
-            printf("%lf, ", individualSpeed[sample]);
+//            printf("%lf, ", individualSpeed[sample]);
         }
-        printf("\n");
+//        printf("\n");
         bestSpeed[i] = maxSpeed;
         
         if((i + 1) % selectInterval == 0 && (i + 1) != evaluationTimes)
@@ -441,12 +464,6 @@ void evolutionAlgo()
     }
     
     printf("speed: %lf\n", maxSpeed);
-    initObject(individualRules[bestRobotIdx]);
-    applyMaterialtoSprings(individualMaterial[bestRobotIdx], individualMaterialNum[bestRobotIdx]);
-    draw();
-//    double tmpSp, tmpSpPath;
-//    speed(points, tmpSp, tmpSpPath);
-//    printf("%lf %lf\n", tmpSp, tmpSpPath);
     
     FILE* fileMaterial = fopen(filenameMaterial, "w+");
     if(fileMaterial == NULL)
@@ -542,7 +559,7 @@ void writeSpeed()
 
 void writeMaterial(FILE* file, struct Material materials[MAXN], int materialsNum)
 {
-    /* int Idx;
+    /* int pos[3];
      * double len;
      * double k;
      * bool muscle = false;
@@ -550,21 +567,36 @@ void writeMaterial(FILE* file, struct Material materials[MAXN], int materialsNum
      * double b;
      * double c;
      */
+    
+    fwrite(&materialsNum, sizeof(int), 1, file);
+    size_t size = sizeof(struct Material);
     for(int i = 0; i < materialsNum; i ++)
     {
-        fprintf(file, "material\n");
-        fprintf(file, "%lf %lf %lf\n", materials[i].pos[0], materials[i].pos[1], materials[i].pos[2]);
-        fprintf(file, "%lf\n", materials[i].len);
-        fprintf(file, "%lf\n", materials[i].k);
-        fprintf(file, "%d\n", materials[i].muscle);
-        fprintf(file, "%lf\n", materials[i].omega);
-        fprintf(file, "%lf\n", materials[i].b);
-        fprintf(file, "%lf\n", materials[i].c);
-        fprintf(file, "\n");
+        fwrite(&materials[i], size, 1, file);
     }
-    fprintf(file, "\n");
-    
     return;
+}
+
+int readMaterial(char filename[100], struct Material materials[MAXN])
+{
+    FILE* file = fopen(filenameMaterial, "r");
+    if(file == NULL)
+    {
+        perror(filenameMaterial);
+        exit(1);
+    }
+    
+    int materialsNum = 0;
+    fread(&materialsNum, sizeof(int), 1, file);
+    
+    size_t size = sizeof(struct Material);
+    for(int i = 0; i < materialsNum; i ++)
+    {
+        fread(&materials[i], size, 1, file);
+    }
+    
+    fclose(file);
+    return materialsNum;
 }
 
 void writeRules(bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6])
@@ -648,41 +680,4 @@ void writeDiversity(double diversity[evaluationTimes])
     
     fclose(fileDiverse);
     return;
-}
-
-/* int[3] pos;
- * double len;
- * double k;
- * bool muscle = false;
- * double omega;
- * double b;
- * double c;
- */
-int readMaterial(char filename[100], struct Material materials[MAXN])
-{
-    FILE* file = fopen(filenameMaterial, "r");
-    if(file == NULL)
-    {
-        perror(filenameMaterial);
-        exit(1);
-    }
-    
-    int materialsNum = 0;
-    char materialStart[15];
-    while(fscanf(file, "%9c\n", materialStart) != EOF)
-    {
-        fscanf(file, "%lf %lf %lf\n", &materials[materialsNum].pos[0], &materials[materialsNum].pos[1], &materials[materialsNum].pos[2]);
-        fscanf(file, "%lf\n", &materials[materialsNum].len);
-        fscanf(file, "%lf\n", &materials[materialsNum].k);
-        fscanf(file, "%d\n", &materials[materialsNum].muscle);
-        fscanf(file, "%lf\n", &materials[materialsNum].omega);
-        fscanf(file, "%lf\n", &materials[materialsNum].b);
-        fscanf(file, "%lf\n", &materials[materialsNum].c);
-        fscanf(file, "\n");
-        
-        materialsNum ++;
-    }
-    
-    fclose(file);
-    return materialsNum;
 }

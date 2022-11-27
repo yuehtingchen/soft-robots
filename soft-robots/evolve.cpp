@@ -25,7 +25,7 @@ extern struct Spring springs[MAXN_SQR];
 
 const int K_HARD = 10000;
 const int K_SOFT = 1000;
-const double PI = 3.1415926;
+const double PI = 3.14159265;
 
 void applyMaterialtoSprings(struct Material materials[MAXN], int materialsNum);
 void randMaterial(struct Material* material, int location);
@@ -312,6 +312,7 @@ void basicSelect(struct Material materials[sampleSize][MAXN], int materialsNum[s
     double fitness[sampleSize];
     int pressure = 0.5 * sampleSize;
     double thresholdFitness = 0;
+    int badIdx[sampleSize], goodIdx[sampleSize], badCnt = 0, goodCnt = 0;
     
     for(int i = 0; i < sampleSize; i ++)
     {
@@ -320,14 +321,18 @@ void basicSelect(struct Material materials[sampleSize][MAXN], int materialsNum[s
     
     for(int i = 0; i < sampleSize; i ++)
     {
-        int cnt = 0;
+        int numBetter = 0;
         for(int j = 0; j < sampleSize; j ++)
         {
-            if(fitness[j] > fitness[i]) cnt ++;
+            if(fitness[j] > fitness[i]) numBetter ++;
         }
-        if(cnt == pressure)
+        if(numBetter > pressure)
         {
-            thresholdFitness = fitness[i];
+            badIdx[badCnt ++] = i;
+        }
+        else
+        {
+            goodIdx[goodCnt ++] = i;
         }
     }
     
@@ -346,35 +351,38 @@ void basicSelect(struct Material materials[sampleSize][MAXN], int materialsNum[s
         copyRules(rules[i], oldRules[i]);
     }
     
-    for(int i = 0; i < sampleSize; i ++)
+    for(int i = 0; i < badCnt; i ++)
     {
-        if(fitness[i] < thresholdFitness)
+        int sampleIdx = badIdx[i];
+        
+        struct Material tmpMaterials[MAXN];
+        int tmpMaterialsNum;
+        double tmpSpeed = 0, tmpSpPath = 0;
+        bool tmpRules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6];
+        
+        int momGoodIdx = random(0, goodCnt - 2);
+        int dadGoodIdx = random(momGoodIdx + 1, goodCnt - 1);
+        int momIdx = goodIdx[momGoodIdx];
+        int dadIdx = goodIdx[dadGoodIdx];
+        
+        crossOver(oldMaterials[momIdx], &oldMaterialsNum[momIdx],
+                  oldMaterials[dadIdx], &oldMaterialsNum[dadIdx],
+                  tmpMaterials, &tmpMaterialsNum);
+        crossOver(oldRules[momIdx], oldRules[dadIdx], tmpRules);
+        
+        generateObject(tmpRules);
+        applyMaterialtoSprings(tmpMaterials, tmpMaterialsNum);
+        speed(points, tmpSpeed, tmpSpeed);
+        
+        if(speedFitness(tmpSpeed, tmpSpPath) > fitness[sampleIdx])
         {
-            struct Material tmpMaterials[MAXN];
-            int tmpMaterialsNum;
-            double tmpSpeed = 0, tmpSpPath = 0;
-            bool tmpRules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6];
-            
-            int momIdx = random(0, sampleSize - 2);
-            int dadIdx = random(momIdx + 1, sampleSize - 1);
-            crossOver(oldMaterials[momIdx], &oldMaterialsNum[momIdx],
-                      oldMaterials[dadIdx], &oldMaterialsNum[dadIdx],
-                      tmpMaterials, &tmpMaterialsNum);
-            crossOver(oldRules[momIdx], oldRules[dadIdx], tmpRules);
-            
-            generateObject(tmpRules);
-            applyMaterialtoSprings(tmpMaterials, tmpMaterialsNum);
-            speed(points, tmpSpeed, tmpSpeed);
-            
-            if(speedFitness(tmpSpeed, tmpSpPath) > fitness[i])
-            {
-                printf("%d\n", i);
-                sp[i] = tmpSpeed;
-                speedPath[i] = tmpSpPath;
-                copyMaterial(tmpMaterials, materials[i], materialsNum[i]);
-                copyRules(tmpRules, rules[i]);
-            }
+            printf("%d\n", sampleIdx);
+            sp[sampleIdx] = tmpSpeed;
+            speedPath[sampleIdx] = tmpSpPath;
+            copyMaterial(tmpMaterials, materials[sampleIdx], materialsNum[sampleIdx]);
+            copyRules(tmpRules, rules[sampleIdx]);
         }
+        
     }
     
     return;
@@ -594,7 +602,9 @@ void printMaterials(struct Material materials[MAXN], int materialsNum)
         printf("muscle = %d\n", materials[i].muscle);
         if(materials[i].muscle)
         {
+            printf("omega = %f\n", materials[i].omega);
             printf("b = %f\n", materials[i].b);
+            printf("c = %f\n", materials[i].c);
         }
         else
         {
