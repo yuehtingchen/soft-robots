@@ -379,6 +379,7 @@ void basicSelect(struct Material materials[sampleSize][MAXN], int materialsNum[s
 //            printf("%d\n", sampleIdx);
             sp[sampleIdx] = tmpSpeed;
             speedPath[sampleIdx] = tmpSpPath;
+            materialsNum[sampleIdx] = tmpMaterialsNum;
             copyMaterial(tmpMaterials, materials[sampleIdx], materialsNum[sampleIdx]);
             copyRules(tmpRules, rules[sampleIdx]);
         }

@@ -11,13 +11,13 @@
 #define MAXN 150
 #define MAXN_SQR 2000
 
-const int MAX_SIDE = 2;
+const int MAX_SIDE = 4;
 const int MAX_SIDE_1 = MAX_SIDE + 1;
 const int MAX_BLOCKS = MAX_SIDE * MAX_SIDE * MAX_SIDE;
 const int MAX_POINTS = (MAX_SIDE + 1) * (MAX_SIDE + 1) * (MAX_SIDE + 1);
 
-const int testNum = 1;
-const int evaluationTimes = 1;
+const int testNum = 5;
+const int evaluationTimes = 100;
 const int selectInterval = 5;
 const int sampleSize = 10;
 
@@ -70,7 +70,7 @@ struct Material
     double k;
     bool muscle = false;
     double omega = 0;
-    double b = 0 ;
+    double b = 0;
     double c = 0;
     
     int pIdx()
@@ -84,6 +84,19 @@ struct Material
         pos[1] = pIdx % (MAX_SIDE_1 * MAX_SIDE_1) / MAX_SIDE_1;
         pos[2] = pIdx / MAX_SIDE_1 / MAX_SIDE_1;
     };
+    
+    Material& operator=(Material other)
+    {
+        this->pos[0] = other.pos[0];
+        this->pos[1] = other.pos[1];
+        this->pos[2] = other.pos[2];
+        this->k = other.k;
+        this->muscle = other.muscle;
+        this->omega = other.omega;
+        this->b = other.b;
+        this->c= other.c;
+        return *this;
+    }
 };
 
 #endif /* utility_h */

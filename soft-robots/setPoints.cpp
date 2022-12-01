@@ -100,8 +100,9 @@ void printSprings()
 {
     for(int i = 0; i < numSprings; i ++)
     {
-        printf("p1: %f %f %f\n", springs[i].p1->pos[0], springs[i].p1->pos[1], springs[i].p1->pos[2]);
-        printf("p2: %f %f %f\n", springs[i].p2->pos[0], springs[i].p2->pos[1], springs[i].p2->pos[2]);
+        printf("p1: %lf %lf %lf\n", springs[i].p1->pos[0], springs[i].p1->pos[1], springs[i].p1->pos[2]);
+        printf("p2: %lf %lf %lf\n", springs[i].p2->pos[0], springs[i].p2->pos[1], springs[i].p2->pos[2]);
+        printf("len: %lf\n", springs[i].len);
         printf("k=%f ", springs[i].k);
         if(springs[i].muscle)
         {
