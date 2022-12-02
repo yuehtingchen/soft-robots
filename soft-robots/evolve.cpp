@@ -372,7 +372,7 @@ void basicSelect(struct Material materials[sampleSize][MAXN], int materialsNum[s
         
         generateObject(tmpRules);
         applyMaterialtoSprings(tmpMaterials, tmpMaterialsNum);
-        speed(points, tmpSpeed, tmpSpeed);
+        speed(points, tmpSpeed, tmpSpPath);
         
         if(speedFitness(tmpSpeed, tmpSpPath) > fitness[sampleIdx])
         {
@@ -509,6 +509,7 @@ double compareSprings(struct Spring a, struct Spring b)
 double compareObjects(struct Spring springs1[MAXN_SQR], struct Spring springs2[MAXN_SQR], int numSprings1, int numSprings2)
 {
     int minSprings = numSprings1 < numSprings2 ? numSprings1 : numSprings2;
+    int maxSprings = numSprings1 > numSprings2 ? numSprings1 : numSprings2;
     double diff = 0;
     for(int q = 0; q < minSprings; q ++)
     {
@@ -516,7 +517,7 @@ double compareObjects(struct Spring springs1[MAXN_SQR], struct Spring springs2[M
     }
     diff += abs(numSprings2 - numSprings1);
     
-    return diff / numSprings;
+    return diff / maxSprings;
 }
 
 double getDiversity(struct Material materials[sampleSize][MAXN], int materialsNum[sampleSize], bool rules[sampleSize][MAX_SIDE][MAX_SIDE][MAX_SIDE][6])
