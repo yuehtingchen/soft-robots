@@ -35,8 +35,10 @@ extern struct Spring springs[MAXN];
 bool toWriteDiversity = true;
 
 double bestSpeed[evaluationTimes];
+double bestFitness[evaluationTimes];
 char folderName[100] = "/Users/CJChen/Desktop/CourseworksF2022/softRobotDocs/data/";
 char filenameSpeed[100];
+char filenameFitness[100];
 char filenameMaterial[100];
 char filenameRules[100];
 char filenameDiversity[100];
@@ -53,6 +55,7 @@ void evolutionAlgo();
 void initObject();
 void initObject(bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6]);
 void writeSpeed();
+void writeFitness();
 void testOpenFile();
 void writeDiversity(double diversity[evaluationTimes]);
 void writeMaterial(FILE* file, struct Material materials[MAXN], int materialsNum);
@@ -64,7 +67,7 @@ void printMaterials(struct Material materials[MAXN], int materialsNum);
 int main()
 {
     /* 0: random, 1: hillClimber, 2: evolutionAlgo */
-    selectRun = 2;
+    selectRun = 1;
     /* 0: cube, 1: 2 cubes, 2: walking cubes, 3: insect*/
     selectObject = 0;
     
@@ -79,19 +82,23 @@ int main()
         srand((unsigned int)time(NULL)^(i));
         
         filenameSpeed[0] = 0;
+        filenameFitness[0] = 0;
         filenameMaterial[0] = 0;
         filenameRules[0] = 0;
         filenameDiversity[0] = 0;
         strcat(filenameSpeed, folderName);
+        strcat(filenameFitness, folderName);
         strcat(filenameMaterial, folderName);
         strcat(filenameRules, folderName);
         strcat(filenameDiversity, folderName);
 
         char tmpfilenameSpeed[100];
+        char tmpfilenameFitness[100];
         char tmpfilenameMaterial[100];
         char tmpfilenameRules[100];
         char tmpfilenameDiversity[100];
         snprintf(tmpfilenameSpeed, 12, "speed_%d.csv", i + 1);
+        snprintf(tmpfilenameFitness, 14, "fitness_%d.csv", i + 1);
         snprintf(tmpfilenameMaterial, 15, "material_%d.txt", i + 1);
         snprintf(tmpfilenameRules, 12, "rules_%d.txt", i + 1);
         snprintf(tmpfilenameDiversity, 16, "diversity_%d.txt", i + 1);
@@ -100,6 +107,9 @@ int main()
         {
             strcat(filenameSpeed, "RM/");
             strcat(filenameSpeed, tmpfilenameSpeed);
+            
+            strcat(filenameFitness, "RM/");
+            strcat(filenameFitness, tmpfilenameFitness);
 
             strcat(filenameMaterial, "RM/");
             strcat(filenameMaterial, tmpfilenameMaterial);
@@ -113,6 +123,9 @@ int main()
         {
             strcat(filenameSpeed, "HC/");
             strcat(filenameSpeed, tmpfilenameSpeed);
+            
+            strcat(filenameFitness, "HC/");
+            strcat(filenameFitness, tmpfilenameFitness);
 
             strcat(filenameMaterial, "HC/");
             strcat(filenameMaterial, tmpfilenameMaterial);
@@ -126,6 +139,9 @@ int main()
         {
             strcat(filenameSpeed, "EA/");
             strcat(filenameSpeed, tmpfilenameSpeed);
+            
+            strcat(filenameFitness, "EA/");
+            strcat(filenameFitness, tmpfilenameFitness);
 
             strcat(filenameMaterial, "EA/");
             strcat(filenameMaterial, tmpfilenameMaterial);
@@ -138,6 +154,7 @@ int main()
             evolutionAlgo();
         }
         writeSpeed();
+        writeFitness();
         
         break;
     }
@@ -162,26 +179,26 @@ int main()
     filenameRules[0] = 0;
     filenameMaterial[0] = 0;
     strcat(filenameRules, folderName);
-    strcat(filenameRules, "EA_10_100/rules_5.txt");
+    strcat(filenameRules, "EA_10_100/rules_1.txt");
     strcat(filenameMaterial, folderName);
-    strcat(filenameMaterial, "EA_10_100/material_5.txt");
+    strcat(filenameMaterial, "EA_10_100/material_1.txt");
     bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6];
     struct Material materials[MAXN];
     int materialsNum = 0;
     
     readRules(filenameRules, rules);
     materialsNum = readMaterial(filenameMaterial, materials);
-    initObject(rules);
-    applyMaterialtoSprings(materials, materialsNum);
+//    initObject(rules);
+//    applyMaterialtoSprings(materials, materialsNum);
 //    double sp, spPath;
 //    speed(points, sp, spPath);
 //    printf("%lf %lf\n", sp, spPath);
     
     initObject(rules);
     applyMaterialtoSprings(materials, materialsNum);
+//    printMaterials(materials, materialsNum);
     draw();
     */
-    
     return 0;
 }
 
@@ -228,6 +245,7 @@ void randomSearch()
         }
         
         bestSpeed[i] = maxSpeed;
+        bestFitness[i] = maxFitness;
     }
     
     applyMaterialtoSprings(individualMaterial[bestMaterialIdx], individualMaterialNum[bestMaterialIdx]);
@@ -357,6 +375,7 @@ void hillClimber()
         }
         
         bestSpeed[i] = maxSpeed;
+        bestFitness[i] = maxFitness;
     }
     
     applyMaterialtoSprings(individualMaterial[bestMaterialIdx], individualMaterialNum[bestMaterialIdx]);
@@ -421,10 +440,7 @@ void evolutionAlgo()
             maxSpeed = individualSpeed[sample];
             bestRobotIdx = sample;
         }
-        
-//        printf("%lf, ", individualSpeed[sample]);
     }
-//    printf("\n");
     
     for(int i = 0; i < evaluationTimes; i ++)
     {
@@ -451,6 +467,7 @@ void evolutionAlgo()
         }
 //        printf("\n");
         bestSpeed[i] = maxSpeed;
+        bestFitness[i] = maxFitness;
         
         if((i + 1) % selectInterval == 0 && (i + 1) != evaluationTimes)
         {
@@ -516,11 +533,17 @@ void initObject()
 void testOpenFile()
 {
     FILE* fileSpeed = fopen(filenameSpeed, "w+");
+    FILE* fileFitness = fopen(filenameFitness, "w+");
     FILE* fileMaterial = fopen(filenameMaterial, "w+");
     FILE* fileRules = fopen(filenameRules, "w+");
     if(fileSpeed == NULL)
     {
         perror(filenameSpeed);
+        exit(1);
+    }
+    if(fileFitness == NULL)
+    {
+        perror(filenameFitness);
         exit(1);
     }
     if(fileMaterial == NULL)
@@ -534,6 +557,7 @@ void testOpenFile()
         exit(1);
     }
     fclose(fileSpeed);
+    fclose(fileFitness);
     fclose(fileMaterial);
     fclose(fileRules);
 }
@@ -550,6 +574,25 @@ void writeSpeed()
     for(int i = 0; i < evaluationTimes; i ++)
     {
         fprintf(file, "%lf\n", bestSpeed[i]);
+    }
+    
+    fclose(file);
+    
+    return;
+}
+
+void writeFitness()
+{
+    FILE* file = fopen(filenameFitness, "w+");
+    if(file == NULL)
+    {
+        perror(filenameFitness);
+        exit(1);
+    }
+    
+    for(int i = 0; i < evaluationTimes; i ++)
+    {
+        fprintf(file, "%lf\n", bestFitness[i]);
     }
     
     fclose(file);
