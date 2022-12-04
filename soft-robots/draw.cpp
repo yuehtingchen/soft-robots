@@ -13,6 +13,7 @@
 #include <chrono>
 #include <time.h>
 #include <set>
+#include <unordered_map>
 using namespace std;
 
 // Include GLEW
@@ -46,7 +47,7 @@ const int windowHeight = 1080;
 bool writeVideo = false;
 const char* cmd = "/opt/homebrew/bin/ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s 3840x2160 -i - "
                   "-threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf vflip "
-                  "/Users/CJChen/Desktop/CourseworksF2022/softRobotDocs/videos/walking-cubes/output.mp4";
+                  "/Users/CJChen/Desktop/CourseworksF2022/softRobotDocs/videos/random-cubes/output.mp4";
 
 /* open pipe to ffmpeg's stdin in binary write mode */
 int frameWidth = windowWidth * 2;
@@ -56,8 +57,8 @@ FILE* ffmpeg = NULL;
 int* buffer = new int[frameWidth * frameHeigth];
 
 /* lighting */
-vec3 initLightPosition = vec3(-1, 0, 1.5);
-vec3 initCameraPosition = vec3(-10, 0, 4);
+vec3 initLightPosition = vec3(0, 0, 4);
+vec3 initCameraPosition = vec3(-10, -2, 4);
 
 /* color */
 const GLfloat color_data[] = {1.0f, 0.3f, 0.3f};
@@ -75,13 +76,14 @@ extern int numSprings;
 extern struct Point points[MAXN];
 extern struct Spring springs[MAXN_SQR];
 
-const bool draw_surface = false;
+const bool draw_surface = true;
 
 vector< vec3 > box_points_buffer_data;
 vector< vec3 > box_vertex_buffer_data;
 vector< vec3 > box_line_buffer_data;
 vector< vec3 > normal;
 vector< vec3 > material_color_buffer_data;
+unsigned long box_vertex_line_startIdx = 0;
 
 /* floor */
 int floor_buffer_len = 6;
@@ -169,7 +171,7 @@ int draw( void )
         /* compute MVP to follow object */
         double centerPos[3];
         getCenterOfMass(points, centerPos);
-        cameraPosition = vec3(initCameraPosition.x + centerPos[0], initCameraPosition.y, initCameraPosition.z);
+        cameraPosition = vec3(initCameraPosition.x + centerPos[0], initCameraPosition.y + centerPos[1], initCameraPosition.z);
         ViewMatrix = lookAt(cameraPosition, vec3(centerPos[0], centerPos[1], 0), vec3(0, 0, 1));
         MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
         
@@ -227,7 +229,8 @@ int draw( void )
         /* draw triangles */
         else
         {
-            glDrawArrays(GL_TRIANGLES, 0, (unsigned int) box_vertex_buffer_data.size());
+            glDrawArrays(GL_TRIANGLES, 0, (unsigned int) box_vertex_line_startIdx);
+            glDrawArrays(GL_LINES, (int) box_vertex_line_startIdx, (unsigned int) box_vertex_buffer_data.size());
         }
         
         /* color of box */
@@ -355,21 +358,13 @@ vec3 materialColor(struct Spring spring)
 {
     if(spring.muscle)
     {
-//        if(spring.c != 0)
-//        {
-//            return vec3(1.0f, 0, 0);
-//        }
-//        else
-//        {
-//            return vec3(1.0f, 0.3f, 0.0f);
-//        }
         double len = -1 * 0.5 * sin(spring.omega * T + spring.c) + 0.5;
-        return vec3(1.0f, 0.6 * len + 0.3f, 0.6 * len + 0.3f);
+        return vec3(1.0f, 0.6 * len, 0);
         
     }
     else if(spring.k > 5000)
     {
-        return vec3(0.5f, 0.8f, 0.0f);
+        return vec3(0.2f, 0.8f, 0.2f);
     }
     else
     {
@@ -396,6 +391,7 @@ void updateObject()
     normal.clear();
     box_line_buffer_data.clear();
     material_color_buffer_data.clear();
+    box_vertex_line_startIdx = 0;
     
     for(int i = 0; i < numPoints; i ++)
     {
@@ -415,83 +411,92 @@ void updateObject()
     }
     else
     {
-        for(int i = 0; i < numSprings - 2; i ++)
+        unordered_map<Point*, vector<int>> hmap;
+        
+        hmap.clear();
+        for(int i = 0; i < numSprings; i ++)
         {
-            for(int j = i + 1; j < numSprings - 1; j ++)
+            if(springs[i].len - 1 > 0.001) continue;
+            
+            if(hmap[springs[i].p1].empty())
             {
-                if(springs[i].p1 != springs[j].p1 &&
-                   springs[i].p2 != springs[j].p2 &&
-                   springs[i].p1 != springs[j].p2 &&
-                   springs[i].p2 != springs[j].p1)
+                hmap[springs[i].p1] = vector<int>(1, i);
+            }
+            else
+            {
+                vector<int> tmp = hmap[springs[i].p1];
+                tmp.push_back(i);
+                hmap[springs[i].p1] = tmp;
+            }
+            
+            if(hmap[springs[i].p2].empty())
+            {
+                hmap[springs[i].p2] = vector<int>(1, i);
+            }
+            else
+            {
+                vector<int> tmp = hmap[springs[i].p2];
+                tmp.push_back(i);
+                hmap[springs[i].p2] = tmp;
+            }
+        }
+        
+        for(const pair<Point*, vector<int>> p: hmap)
+        {
+            vector<int> springsIdx = p.second;
+            for(int i: springsIdx)
+            {
+                for(int j: springsIdx)
                 {
-                    continue;
-                }
-                
-                for(int k = j + 1; k < numSprings; k ++)
-                {
-                    /* use set to ensure unique */
+                    
+                    if(i == j)
+                    {
+                        continue;
+                    }
+                    
                     set< struct Point* > s;
                     vector< struct Point* > vec;
                     s.insert(springs[i].p1);
                     s.insert(springs[i].p2);
                     s.insert(springs[j].p1);
                     s.insert(springs[j].p2);
-                    s.insert(springs[k].p1);
-                    s.insert(springs[k].p2);
                     
-                    /* check that they form a triangle */
-                    if(s.size() != 3)
+                    for(Point* point: s)
                     {
-                        continue;
+                        vec.push_back(point);
                     }
                     
-                    for(struct Point* p: s)
+                    for(Point* point: vec)
                     {
-                        vec.push_back(p);
+                        material_color_buffer_data.push_back(materialColor(springs[i]));
+                        box_vertex_buffer_data.push_back(vec3(point->pos[0], point->pos[1], point->pos[2]));
                     }
                     
-                    for(int i = 0; i < vec.size(); i ++)
+                    /* don't know which direction so do both */
+                    for(int i = int(vec.size()) - 1; i >= 0; i --)
                     {
-                        struct Point* p = vec[i];
-                        if(springs[i].p1 == p || springs[i].p2 == p)
-                        {
-                            material_color_buffer_data.push_back(materialColor(springs[i]));
-                        }
-                        else if(springs[j].p1 == p || springs[j].p2 == p)
-                        {
-                            material_color_buffer_data.push_back(materialColor(springs[j]));
-                        }
-                        else if(springs[k].p1 == p || springs[k].p2 == p)
-                        {
-                            material_color_buffer_data.push_back(materialColor(springs[k]));
-                        }
-                        
-                        box_vertex_buffer_data.push_back(vec3(p->pos[0], p->pos[1], p->pos[2]));
-                    }
-                    
-                    /* don't know which is the correct direction so do both */
-                    for(int i = (int)vec.size() - 1; i >= 0; i --)
-                    {
-                        struct Point* p = vec[i];
-                        if(springs[i].p1 == p || springs[i].p2 == p)
-                        {
-                            material_color_buffer_data.push_back(materialColor(springs[i]));
-                        }
-                        else if(springs[j].p1 == p || springs[j].p2 == p)
-                        {
-                            material_color_buffer_data.push_back(materialColor(springs[j]));
-                        }
-                        else if(springs[k].p1 == p || springs[k].p2 == p)
-                        {
-                            material_color_buffer_data.push_back(materialColor(springs[k]));
-                        }
-                        box_vertex_buffer_data.push_back(vec3(p->pos[0], p->pos[1], p->pos[2]));
+                        Point* point = vec[i];
+                        material_color_buffer_data.push_back(materialColor(springs[i]));
+                        box_vertex_buffer_data.push_back(vec3(point->pos[0], point->pos[1], point->pos[2]));
                     }
                 }
             }
         }
         
-        for(int i = 0; i < box_vertex_buffer_data.size(); i += 3)
+        /* add lines */
+        box_vertex_line_startIdx = box_vertex_buffer_data.size();
+        for(int i = 0; i < numSprings; i ++)
+        {
+            if(springs[i].len - 1 > 0.001) continue;
+            box_vertex_buffer_data.push_back(vec3(springs[i].p1->pos[0], springs[i].p1->pos[1], springs[i].p1->pos[2]));
+            box_vertex_buffer_data.push_back(vec3(springs[i].p2->pos[0], springs[i].p2->pos[1], springs[i].p2->pos[2]));
+
+            material_color_buffer_data.push_back(vec3(0, 0, 0));
+            material_color_buffer_data.push_back(vec3(0, 0, 0));
+        }
+        
+        /* normal vectors */
+        for(int i = 0; i < box_vertex_line_startIdx; i += 3)
         {
             vec3 v1 = box_vertex_buffer_data[i];
             vec3 v2 = box_vertex_buffer_data[i + 1];
