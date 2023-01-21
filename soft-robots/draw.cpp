@@ -47,7 +47,7 @@ const int windowHeight = 1080;
 bool writeVideo = false;
 const char* cmd = "/opt/homebrew/bin/ffmpeg -r 60 -f rawvideo -pix_fmt rgba -s 3840x2160 -i - "
                   "-threads 0 -preset fast -y -pix_fmt yuv420p -crf 21 -vf vflip "
-                  "/Users/CJChen/Desktop/CourseworksF2022/softRobotDocs/videos/random-cubes/output.mp4";
+                  "/Users/CJChen/Desktop/CourseworksF2022/softRobotDocs/videos/random-cubes/EA_10_100_8/output.mp4";
 
 /* open pipe to ffmpeg's stdin in binary write mode */
 int frameWidth = windowWidth * 2;
@@ -58,7 +58,7 @@ int* buffer = new int[frameWidth * frameHeigth];
 
 /* lighting */
 vec3 initLightPosition = vec3(0, 0, 4);
-vec3 initCameraPosition = vec3(-10, -2, 4);
+vec3 initCameraPosition = vec3(-15, 4, 4);
 
 /* color */
 const GLfloat color_data[] = {1.0f, 0.3f, 0.3f};
@@ -86,7 +86,7 @@ vector< vec3 > material_color_buffer_data;
 unsigned long box_vertex_line_startIdx = 0;
 
 /* floor */
-int floor_buffer_len = 6;
+int floor_buffer_len = 0;
 vec3 floor_vertex_data[6] = {
     vec3(-100, -100, 0),
     vec3(100, -100, 0),
@@ -129,7 +129,7 @@ int draw( void )
     /* set constant MVP matrix */
     vec3 cameraPosition = initCameraPosition;
     mat4 ProjectionMatrix = perspective(radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
-    mat4 ViewMatrix = lookAt(cameraPosition, vec3(0, 0, 0), vec3(0, 0, 1));
+    mat4 ViewMatrix = lookAt(cameraPosition, vec3(0, 0, 2), vec3(0, 0, 1));
     mat4 ModelMatrix = mat4(1.0);
     mat4 MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
@@ -172,7 +172,7 @@ int draw( void )
         double centerPos[3];
         getCenterOfMass(points, centerPos);
         cameraPosition = vec3(initCameraPosition.x + centerPos[0], initCameraPosition.y + centerPos[1], initCameraPosition.z);
-        ViewMatrix = lookAt(cameraPosition, vec3(centerPos[0], centerPos[1], 0), vec3(0, 0, 1));
+        ViewMatrix = lookAt(cameraPosition, vec3(centerPos[0], centerPos[1], 2), vec3(0, 0, 1));
         MVP = ProjectionMatrix * ViewMatrix * ModelMatrix;
         
         /* draw floor */
@@ -384,6 +384,78 @@ vec3 materialColor(struct Material material)
     return materialColor(spring);
 }
 
+static void pushCubeVertex(int cubeStartSpring) {
+    unordered_map<Point*, vector<int>> hmap;
+    vec3 color = materialColor(springs[cubeStartSpring]);
+    
+    hmap.clear();
+    for(int i = cubeStartSpring; i < cubeStartSpring + 28; i ++)
+    {
+        if(springs[i].len - 1 > 0.001) continue;
+        
+        if(hmap[springs[i].p1].empty())
+        {
+            hmap[springs[i].p1] = vector<int>(1, i);
+        }
+        else
+        {
+            vector<int> tmp = hmap[springs[i].p1];
+            tmp.push_back(i);
+            hmap[springs[i].p1] = tmp;
+        }
+        
+        if(hmap[springs[i].p2].empty())
+        {
+            hmap[springs[i].p2] = vector<int>(1, i);
+        }
+        else
+        {
+            vector<int> tmp = hmap[springs[i].p2];
+            tmp.push_back(i);
+            hmap[springs[i].p2] = tmp;
+        }
+    }
+    
+    for(const pair<Point*, vector<int>> p: hmap)
+    {
+        vector<int> springsIdx = p.second;
+        for(int q = 0; q < springsIdx.size() - 1; q ++)
+        {
+            for(int r = q + 1; r < springsIdx.size(); r ++)
+            {
+                int i = springsIdx[q];
+                int j = springsIdx[r];
+                
+                set< struct Point* > s;
+                vector< struct Point* > vec;
+                s.insert(springs[i].p1);
+                s.insert(springs[i].p2);
+                s.insert(springs[j].p1);
+                s.insert(springs[j].p2);
+                
+                for(Point* point: s)
+                {
+                    vec.push_back(point);
+                }
+                
+                for(Point* point: vec)
+                {
+                    material_color_buffer_data.push_back(color);
+                    box_vertex_buffer_data.push_back(vec3(point->pos[0], point->pos[1], point->pos[2]));
+                }
+                
+                /* don't know which direction so do both */
+                for(int i = int(vec.size()) - 1; i >= 0; i --)
+                {
+                    Point* point = vec[i];
+                    material_color_buffer_data.push_back(color);
+                    box_vertex_buffer_data.push_back(vec3(point->pos[0], point->pos[1], point->pos[2]));
+                }
+            }
+        }
+    }
+}
+
 void updateObject()
 {
     box_points_buffer_data.clear();
@@ -411,76 +483,9 @@ void updateObject()
     }
     else
     {
-        unordered_map<Point*, vector<int>> hmap;
-        
-        hmap.clear();
-        for(int i = 0; i < numSprings; i ++)
+        for(int cubeStartSpring = 0; cubeStartSpring < numSprings; cubeStartSpring += 28)
         {
-            if(springs[i].len - 1 > 0.001) continue;
-            
-            if(hmap[springs[i].p1].empty())
-            {
-                hmap[springs[i].p1] = vector<int>(1, i);
-            }
-            else
-            {
-                vector<int> tmp = hmap[springs[i].p1];
-                tmp.push_back(i);
-                hmap[springs[i].p1] = tmp;
-            }
-            
-            if(hmap[springs[i].p2].empty())
-            {
-                hmap[springs[i].p2] = vector<int>(1, i);
-            }
-            else
-            {
-                vector<int> tmp = hmap[springs[i].p2];
-                tmp.push_back(i);
-                hmap[springs[i].p2] = tmp;
-            }
-        }
-        
-        for(const pair<Point*, vector<int>> p: hmap)
-        {
-            vector<int> springsIdx = p.second;
-            for(int i: springsIdx)
-            {
-                for(int j: springsIdx)
-                {
-                    
-                    if(i == j)
-                    {
-                        continue;
-                    }
-                    
-                    set< struct Point* > s;
-                    vector< struct Point* > vec;
-                    s.insert(springs[i].p1);
-                    s.insert(springs[i].p2);
-                    s.insert(springs[j].p1);
-                    s.insert(springs[j].p2);
-                    
-                    for(Point* point: s)
-                    {
-                        vec.push_back(point);
-                    }
-                    
-                    for(Point* point: vec)
-                    {
-                        material_color_buffer_data.push_back(materialColor(springs[i]));
-                        box_vertex_buffer_data.push_back(vec3(point->pos[0], point->pos[1], point->pos[2]));
-                    }
-                    
-                    /* don't know which direction so do both */
-                    for(int i = int(vec.size()) - 1; i >= 0; i --)
-                    {
-                        Point* point = vec[i];
-                        material_color_buffer_data.push_back(materialColor(springs[i]));
-                        box_vertex_buffer_data.push_back(vec3(point->pos[0], point->pos[1], point->pos[2]));
-                    }
-                }
-            }
+            pushCubeVertex(cubeStartSpring);
         }
         
         /* add lines */

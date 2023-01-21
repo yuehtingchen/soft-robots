@@ -8,6 +8,7 @@
 #include <GLFW/glfw3.h>
 extern GLFWwindow* window; // The "extern" keyword here is to access the variable "window" declared in tutorialXXX.cpp. This is a hack to keep the tutorials simple. Please avoid this.
 
+#include <stdio.h>
 // Include GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -27,11 +28,11 @@ glm::mat4 getProjectionMatrix(){
 
 
 // Initial position : on +Z
-glm::vec3 position = glm::vec3( 0, 0, 5 );
+glm::vec3 position = glm::vec3(6, -11, 6);
 // Initial horizontal angle : toward -Z
-float horizontalAngle = 3.14f;
+float horizontalAngle = 15.739261f;
 // Initial vertical angle : none
-float verticalAngle = 0.0f;
+float verticalAngle = -11.320337f;
 // Initial Field of View
 float initialFoV = 45.0f;
 
@@ -93,6 +94,9 @@ void computeMatricesFromInputs(){
     if (glfwGetKey( window, GLFW_KEY_LEFT ) == GLFW_PRESS){
         position -= right * deltaTime * speed;
     }
+    
+    printf("%lf %lf\n", horizontalAngle, verticalAngle);
+    printf("%lf %lf %lf\n", position[0], position[1], position[2]);
 
     float FoV = initialFoV;// - 5 * glfwGetMouseWheel(); // Now GLFW 3 requires setting up a callback for this. It's a bit too complicated for this beginner's tutorial, so it's disabled instead.
 

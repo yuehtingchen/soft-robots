@@ -24,7 +24,7 @@ using namespace std;
 #include "draw.hpp"
 
 extern const double TIME_STEP = 0.0001;
-extern const double MAX_TIME = 10.0;
+extern const double MAX_TIME = 15.0;
 double T = 0;
 
 extern int numPoints;
@@ -67,12 +67,12 @@ void printMaterials(struct Material materials[MAXN], int materialsNum);
 int main()
 {
     /* 0: random, 1: hillClimber, 2: evolutionAlgo */
-    selectRun = 1;
+    selectRun = 2;
     /* 0: cube, 1: 2 cubes, 2: walking cubes, 3: insect*/
-    selectObject = 0;
+    selectObject = 2;
     
     strcat(folderName, "random-cubes/");
-    
+    /*
     pid_t pid = 1;
     auto start = chrono::high_resolution_clock::now();
     for(int i = 0; i < testNum; i ++)
@@ -173,32 +173,27 @@ int main()
         cout << "Time taken by function: "
              << duration.count() / 1000000 << " seconds" << endl;
     }
-    
+    */
     /* draw best robot */
-    /*
+    
     filenameRules[0] = 0;
     filenameMaterial[0] = 0;
     strcat(filenameRules, folderName);
-    strcat(filenameRules, "EA_10_100/rules_1.txt");
+    strcat(filenameRules, "EA_10_100_8/rules_3.txt");
     strcat(filenameMaterial, folderName);
-    strcat(filenameMaterial, "EA_10_100/material_1.txt");
+    strcat(filenameMaterial, "EA_10_100_8/material_3.txt");
     bool rules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6];
     struct Material materials[MAXN];
     int materialsNum = 0;
     
     readRules(filenameRules, rules);
     materialsNum = readMaterial(filenameMaterial, materials);
-//    initObject(rules);
-//    applyMaterialtoSprings(materials, materialsNum);
-//    double sp, spPath;
-//    speed(points, sp, spPath);
-//    printf("%lf %lf\n", sp, spPath);
-    
     initObject(rules);
     applyMaterialtoSprings(materials, materialsNum);
 //    printMaterials(materials, materialsNum);
     draw();
-    */
+    
+    
     return 0;
 }
 
@@ -471,6 +466,7 @@ void evolutionAlgo()
         
         if((i + 1) % selectInterval == 0 && (i + 1) != evaluationTimes)
         {
+            printf("%d\n", i);
             basicSelect(individualMaterial, individualMaterialNum, individualRules, individualSpeed, individualSpeedPath);
         }
         

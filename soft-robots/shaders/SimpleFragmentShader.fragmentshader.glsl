@@ -17,7 +17,7 @@ uniform vec3 lightPosition_worldspace;
 void main()
 {
     vec3 lightColor = vec3(1.0f, 1.0f, 1.0f);
-    float lightPower = 1.0f;
+    float lightPower = 0.8f;
     
     vec3 ambientColor = vec3(0.8,0.8,0.8) * fragmentColor;
     
@@ -36,7 +36,9 @@ void main()
         /* Ambient : simulates indirect lighting */
         ambientColor +
         /* Diffuse : "color" of the object */
-        fragmentColor * lightColor * lightPower * cosTheta * (1 / (dist * dist)) +
+        fragmentColor * lightColor * lightPower * cosTheta * (1 / (dist * dist)); //+
         /* Specular : reflective highlight, like a mirror */
-        lightColor * lightColor * lightPower * pow(cosAlpha,5) / (dist * dist);
+//        lightColor * lightColor * lightPower * pow(cosAlpha,5) / (dist * dist);
+    
+    color = fragmentColor;
 }

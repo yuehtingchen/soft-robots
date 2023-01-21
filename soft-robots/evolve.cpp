@@ -311,7 +311,6 @@ void basicSelect(struct Material materials[sampleSize][MAXN], int materialsNum[s
 {
     double fitness[sampleSize];
     int pressure = 0.5 * sampleSize;
-    double thresholdFitness = 0;
     int badIdx[sampleSize], goodIdx[sampleSize], badCnt = 0, goodCnt = 0;
     
     for(int i = 0; i < sampleSize; i ++)
@@ -360,10 +359,14 @@ void basicSelect(struct Material materials[sampleSize][MAXN], int materialsNum[s
         double tmpSpeed = 0, tmpSpPath = 0;
         bool tmpRules[MAX_SIDE][MAX_SIDE][MAX_SIDE][6];
         
-        int momGoodIdx = random(0, goodCnt - 2);
-        int dadGoodIdx = random(momGoodIdx + 1, goodCnt - 1);
-        int momIdx = goodIdx[momGoodIdx];
-        int dadIdx = goodIdx[dadGoodIdx];
+//        int momGoodIdx = random(0, goodCnt - 2);
+//        int dadGoodIdx = random(momGoodIdx + 1, goodCnt - 1);
+//        int momIdx = goodIdx[momGoodIdx];
+//        int dadIdx = goodIdx[dadGoodIdx];
+        
+        /* niching */
+        int momIdx = sampleIdx - 1 >= 0? sampleIdx - 1 : sampleSize - 1;
+        int dadIdx = sampleIdx + 1 < sampleSize? sampleIdx + 1 : 0;
         
         crossOver(oldMaterials[momIdx], &oldMaterialsNum[momIdx],
                   oldMaterials[dadIdx], &oldMaterialsNum[dadIdx],

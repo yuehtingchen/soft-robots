@@ -8,10 +8,10 @@
 #ifndef utility_h
 #define utility_h
 
-#define MAXN 150
-#define MAXN_SQR 2000
+#define MAXN 1000
+#define MAXN_SQR 20000
 
-const int MAX_SIDE = 4;
+const int MAX_SIDE = 8;
 const int MAX_SIDE_1 = MAX_SIDE + 1;
 const int MAX_BLOCKS = MAX_SIDE * MAX_SIDE * MAX_SIDE;
 const int MAX_POINTS = (MAX_SIDE + 1) * (MAX_SIDE + 1) * (MAX_SIDE + 1);
